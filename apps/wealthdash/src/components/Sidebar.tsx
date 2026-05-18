@@ -21,7 +21,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
       </div>
       <nav className="flex-1 flex flex-col gap-2 px-2 font-label-caps text-label-caps">
         {navItems.map((item) => {
-          const isActive = activeTab === item.id;
+          const isActive = activeTab === item.id || (activeTab === 'WalletDetail' && item.id === 'Dompet');
           return (
             <button 
               key={item.id} 
@@ -38,9 +38,15 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
         })}
       </nav>
       <div className="mt-auto px-2 font-label-caps text-label-caps">
-        <button className="flex items-center gap-3 text-on-primary-container px-4 py-3 opacity-70 hover:bg-secondary/10 hover:opacity-100 transition-all rounded-lg w-full text-left">
-          <span className="material-symbols-outlined">settings</span>
-          Settings
+        <button 
+          onClick={() => setActiveTab('Settings')}
+          className={activeTab === 'Settings' 
+            ? "flex items-center gap-3 bg-secondary-container text-on-secondary-container border-l-4 border-secondary px-4 py-3 rounded-r-lg w-full text-left"
+            : "flex items-center gap-3 text-on-primary-container px-4 py-3 opacity-70 hover:bg-secondary/10 hover:opacity-100 transition-all rounded-lg w-full text-left"
+          }
+        >
+          <span className={`material-symbols-outlined ${activeTab === 'Settings' ? 'filled' : ''}`} style={activeTab === 'Settings' ? { fontVariationSettings: "'FILL' 1" } : {}}>settings</span>
+          Pengaturan
         </button>
       </div>
     </aside>

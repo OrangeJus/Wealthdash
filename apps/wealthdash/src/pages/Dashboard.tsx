@@ -4,7 +4,11 @@ import CashFlowChart from '../components/CashFlowChart';
 import AssetAllocation from '../components/AssetAllocation';
 import RecentTransactions from '../components/RecentTransactions';
 
-const Dashboard = () => {
+interface DashboardProps {
+  onOpenTransaction: () => void;
+}
+
+const Dashboard = ({ onOpenTransaction }: DashboardProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop w-full max-w-container-max-width mx-auto">
       {/* Page Header (Desktop) */}
@@ -13,7 +17,10 @@ const Dashboard = () => {
           <h2 className="font-display-lg text-display-lg text-on-background">Overview</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">Welcome back. Here is your financial summary.</p>
         </div>
-        <button className="bg-secondary text-on-secondary px-5 py-2.5 rounded-lg font-label-caps text-label-caps flex items-center gap-2 hover:bg-secondary-container hover:text-on-secondary-container transition-colors shadow-sm">
+        <button 
+          onClick={onOpenTransaction}
+          className="bg-secondary text-on-secondary px-5 py-2.5 rounded-lg font-label-caps text-label-caps flex items-center gap-2 hover:bg-secondary-container hover:text-on-secondary-container transition-colors shadow-sm"
+        >
           <span className="material-symbols-outlined">add</span>
           Tambah Transaksi
         </button>
