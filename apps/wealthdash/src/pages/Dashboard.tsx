@@ -70,16 +70,14 @@ const Dashboard = ({ onOpenTransaction, onViewAllTransactions }: DashboardProps)
             subtitle="60% used of Rp 3.000.000" 
             amountText="Rp 1.150.000 left" 
             percentage={60} 
-            gradientFrom="from-[#22c55e]" 
-            gradientTo="to-[#ef4444]" 
+            type="expense"
           />
           <ProgressBarCard 
             title="Savings Target" 
             subtitle="80% reached of Rp 10.000.000" 
             amountText="Rp 8.000.000" 
             percentage={80} 
-            gradientFrom="from-[#ef4444]" 
-            gradientTo="to-[#22c55e]" 
+            type="savings"
           />
         </div>
 

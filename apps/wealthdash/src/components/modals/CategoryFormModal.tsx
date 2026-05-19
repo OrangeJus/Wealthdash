@@ -13,6 +13,7 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
   const [type, setType] = useState('expense');
   const [icon, setIcon] = useState('category');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [budget, setBudget] = useState('');
 
   // Icon options
   const icons = [
@@ -32,11 +33,13 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
       setType(initialData.type || 'expense');
       setIcon(initialData.icon || 'category');
       setLogoUrl(initialData.logoUrl || null);
+      setBudget(initialData.budget ? initialData.budget.toString() : '');
     } else if (isOpen) {
       setName('');
       setType('expense');
       setIcon('category');
       setLogoUrl(null);
+      setBudget('');
     }
   }, [editMode, initialData, isOpen]);
 
@@ -84,6 +87,27 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
             className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
           />
         </div>
+
+        {/* Budget Field (Only for Expense) */}
+        {type === 'expense' && (
+          <div>
+            <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5 flex justify-between">
+              <span>Batas Anggaran Bulanan</span>
+              <span className="text-[10px] bg-surface-container px-2 py-0.5 rounded-full text-on-surface-variant font-normal">Opsional</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-body-md">Rp</span>
+              <input 
+                type="number" 
+                placeholder="0"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                className="w-full pl-12 pr-4 bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-on-surface-variant italic">Kosongkan jika kategori ini tidak memiliki batas pengeluaran.</p>
+          </div>
+        )}
 
         {/* Icon/Logo Selector */}
         <div>

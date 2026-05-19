@@ -3,26 +3,6 @@ import { useState } from 'react';
 const Settings = () => {
   const [expenseLimit, setExpenseLimit] = useState('3000000');
   const [savingsTarget, setSavingsTarget] = useState('250000');
-  
-  const defaultIncomeCategories = [
-    { id: 1, name: 'Gaji', editable: true },
-    { id: 2, name: 'Freelance', editable: true },
-    { id: 3, name: 'Bonus', editable: true },
-    { id: 4, name: 'Hadiah', editable: true },
-    { id: 5, name: 'Lainnya', editable: false },
-  ];
-  
-  const defaultExpenseCategories = [
-    { id: 1, name: 'Makanan', editable: true },
-    { id: 2, name: 'Transport', editable: true },
-    { id: 3, name: 'Belanja', editable: true },
-    { id: 4, name: 'Hiburan', editable: true },
-    { id: 5, name: 'Tagihan', editable: true },
-    { id: 6, name: 'Kesehatan', editable: true },
-    { id: 7, name: 'Pendidikan', editable: true },
-    { id: 8, name: 'Lainnya', editable: false },
-  ];
-
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop w-full max-w-container-max-width mx-auto">
       <div className="flex flex-col gap-card-gap pb-12">
@@ -93,64 +73,6 @@ const Settings = () => {
           </div>
         </section>
 
-        {/* Kategori Transaksi */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-card-gap">
-          {/* Pemasukan */}
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/30">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-headline-md text-[18px] font-semibold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#22c55e]">arrow_downward</span>
-                Kategori Pemasukan
-              </h3>
-              <button className="text-secondary hover:bg-secondary/10 px-3 py-1.5 rounded-lg text-label-caps font-label-caps flex items-center gap-1 transition-colors">
-                <span className="material-symbols-outlined text-[16px]">add</span> Tambah
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {defaultIncomeCategories.map(cat => (
-                <div key={cat.id} className="group flex items-center gap-2 bg-surface-container-low border border-outline-variant/30 px-3 py-1.5 rounded-lg text-body-sm font-body-sm text-on-surface">
-                  {cat.name}
-                  {cat.editable ? (
-                    <div className="hidden group-hover:flex items-center gap-1 ml-1 text-on-surface-variant">
-                      <button className="hover:text-secondary"><span className="material-symbols-outlined text-[14px]">edit</span></button>
-                      <button className="hover:text-error"><span className="material-symbols-outlined text-[14px]">delete</span></button>
-                    </div>
-                  ) : (
-                    <span className="material-symbols-outlined text-[14px] text-outline ml-1">lock</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pengeluaran */}
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/30">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-headline-md text-[18px] font-semibold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-error">arrow_upward</span>
-                Kategori Pengeluaran
-              </h3>
-              <button className="text-secondary hover:bg-secondary/10 px-3 py-1.5 rounded-lg text-label-caps font-label-caps flex items-center gap-1 transition-colors">
-                <span className="material-symbols-outlined text-[16px]">add</span> Tambah
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {defaultExpenseCategories.map(cat => (
-                <div key={cat.id} className="group flex items-center gap-2 bg-surface-container-low border border-outline-variant/30 px-3 py-1.5 rounded-lg text-body-sm font-body-sm text-on-surface">
-                  {cat.name}
-                  {cat.editable ? (
-                    <div className="hidden group-hover:flex items-center gap-1 ml-1 text-on-surface-variant">
-                      <button className="hover:text-secondary"><span className="material-symbols-outlined text-[14px]">edit</span></button>
-                      <button className="hover:text-error"><span className="material-symbols-outlined text-[14px]">delete</span></button>
-                    </div>
-                  ) : (
-                    <span className="material-symbols-outlined text-[14px] text-outline ml-1">lock</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Data & Backup */}
         <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/30">

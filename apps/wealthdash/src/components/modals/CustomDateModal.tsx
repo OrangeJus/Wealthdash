@@ -23,7 +23,6 @@ const CustomDateModal = ({ isOpen, onClose, onApply, initialStartDate, initialEn
   const handleApply = () => {
     if (startDate) {
       onApply(startDate, endDate);
-      onClose();
     }
   };
 

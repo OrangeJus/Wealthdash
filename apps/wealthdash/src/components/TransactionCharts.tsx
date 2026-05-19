@@ -35,37 +35,48 @@ const TransactionCharts = ({ onViewCategories }: TransactionChartsProps) => {
         <div>
           <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-6">Pengeluaran Terbesar</h3>
           <div className="flex flex-col gap-5 mt-2">
-            
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center font-body-sm text-body-sm">
-                <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px] text-on-surface-variant">home</span> Utilitas & Tagihan</span>
-                <span className="font-data-sm font-medium">Rp 3.200.000</span>
-              </div>
-              <div className="h-2.5 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-[#f59e0b] w-[60%] rounded-full"></div>
-              </div>
-            </div>
+            {[
+              { name: 'Utilitas & Tagihan', icon: 'home', spent: 3200000, budget: 3500000 },
+              { name: 'Belanja Bulanan', icon: 'shopping_cart', spent: 1500000, budget: 3000000 },
+              { name: 'Makanan', icon: 'restaurant', spent: 800000, budget: null },
+            ].map(cat => {
+              const percentage = cat.budget ? Math.min((cat.spent / cat.budget) * 100, 100) : 0;
+              let barColorClass = "bg-primary";
+              if (cat.budget) {
+                if (percentage >= 90) barColorClass = "bg-[#ef4444]";
+                else if (percentage >= 70) barColorClass = "bg-[#f59e0b]";
+                else barColorClass = "bg-[#10b981]";
+              }
 
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center font-body-sm text-body-sm">
-                <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px] text-on-surface-variant">shopping_cart</span> Belanja Bulanan</span>
-                <span className="font-data-sm font-medium">Rp 1.500.000</span>
-              </div>
-              <div className="h-2.5 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-[#f59e0b] w-[35%] rounded-full opacity-80"></div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center font-body-sm text-body-sm">
-                <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px] text-on-surface-variant">restaurant</span> Makanan</span>
-                <span className="font-data-sm font-medium">Rp 800.000</span>
-              </div>
-              <div className="h-2.5 w-full bg-surface-container rounded-full overflow-hidden">
-                <div className="h-full bg-[#f59e0b] w-[15%] rounded-full opacity-60"></div>
-              </div>
-            </div>
-
+              return (
+                <div key={cat.name} className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-end font-body-sm text-[12px]">
+                    <span className="flex items-center gap-1.5 font-semibold text-on-surface">
+                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{cat.icon}</span> 
+                      {cat.name}
+                    </span>
+                    <div className="text-right flex flex-col">
+                      <span className="font-bold text-on-surface">Rp {cat.spent.toLocaleString('id-ID')}</span>
+                      {cat.budget ? (
+                        <span className="text-[10px] text-on-surface-variant">dari Rp {cat.budget.toLocaleString('id-ID')}</span>
+                      ) : (
+                        <span className="text-[10px] text-on-surface-variant flex items-center justify-end gap-0.5"><span className="material-symbols-outlined text-[12px]">all_inclusive</span> Bebas</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {cat.budget ? (
+                    <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden shadow-inner mt-0.5">
+                      <div className={`${barColorClass} h-full rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
+                    </div>
+                  ) : (
+                    <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden shadow-inner mt-0.5">
+                      <div className="bg-gradient-to-r from-outline-variant/10 to-outline-variant/30 h-full rounded-full w-full"></div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="mt-6 pt-4 border-t border-outline-variant/30 flex justify-end">

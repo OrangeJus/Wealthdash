@@ -10,12 +10,7 @@ const TargetCompositionCard = ({ onTopUp, onEditRoutine }: TargetCompositionCard
         <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase">Komposisi Target</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Target Rutin</span>
-              <button onClick={onEditRoutine} className="text-on-surface-variant hover:text-secondary transition-colors" title="Ubah Target Rutin">
-                <span className="material-symbols-outlined text-[14px]">edit</span>
-              </button>
-            </div>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">Target Rutin</span>
             <span className="font-data-md text-data-md text-on-surface">Rp 250.000</span>
           </div>
           <div className="flex flex-col gap-1">

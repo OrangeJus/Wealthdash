@@ -61,6 +61,7 @@ const TransactionFilterBar = () => {
       customStartDate: startDate,
       customEndDate: endDate
     });
+    setIsDateModalOpen(false);
   };
 
   const handleCancelCustomDate = () => {
