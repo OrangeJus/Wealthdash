@@ -1,25 +1,31 @@
+import { useApi, formatRp } from '../hooks/useApi';
+import { transactionsApi } from '../services/api';
+import type { Transaction } from '../types';
+
 interface RecentTransactionsProps {
   onViewAll?: () => void;
 }
 
 const RecentTransactions = ({ onViewAll }: RecentTransactionsProps) => {
-  const transactions = [
-    { date: '24 Oct 2023', type: 'EXPENSE', category: 'Makanan', icon: 'restaurant', wallet: 'BCA Utama', desc: 'Makan siang di cafe', amount: '- Rp 150.000', amountClass: 'text-on-surface', typeClass: 'bg-[#fee2e2] text-[#991b1b]' },
-    { date: '23 Oct 2023', type: 'INCOME', category: 'Gaji', icon: 'work', wallet: 'Mandiri Payroll', desc: 'Gaji Bulan Oktober', amount: '+ Rp 5.000.000', amountClass: 'text-secondary', typeClass: 'bg-[#dcfce7] text-[#166534]' },
-    { date: '22 Oct 2023', type: 'EXPENSE', category: 'Transportasi', icon: 'local_taxi', wallet: 'Gopay', desc: 'Gojek ke kantor', amount: '- Rp 35.000', amountClass: 'text-on-surface', typeClass: 'bg-[#fee2e2] text-[#991b1b]' },
-    { date: '21 Oct 2023', type: 'TRANSFER', category: 'Internal', icon: 'sync_alt', wallet: 'BCA -> Bibit', desc: 'Top up Reksadana', amount: 'Rp 500.000', amountClass: 'text-on-surface', typeClass: 'bg-[#f1f5f9] text-[#475569]' },
-    { date: '20 Oct 2023', type: 'EXPENSE', category: 'Belanja', icon: 'shopping_cart', wallet: 'Kartu Kredit', desc: 'Groceries bulanan di Superindo', amount: '- Rp 850.000', amountClass: 'text-on-surface', typeClass: 'bg-[#fee2e2] text-[#991b1b]' },
-  ];
+  const { data: transactions } = useApi(() => transactionsApi.recent(), []);
+
+  const getTypeDisplay = (tx: Transaction) => {
+    if (tx.type === 'income') return { label: 'INCOME', icon: 'work', typeClass: 'bg-[#dcfce7] text-[#166534]' };
+    if (tx.type === 'expense') return { label: 'EXPENSE', icon: tx.category_icon || 'receipt', typeClass: 'bg-[#fee2e2] text-[#991b1b]' };
+    return { label: 'TRANSFER', icon: 'sync_alt', typeClass: 'bg-[#f1f5f9] text-[#475569]' };
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   return (
     <div className="col-span-1 md:col-span-12 bg-surface-container-lowest border border-surface-variant rounded-xl overflow-hidden flex flex-col">
       <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-lowest">
         <h3 className="font-headline-md text-headline-md text-on-surface">Recent Transactions</h3>
         <button 
-          onClick={(e) => {
-            e.preventDefault();
-            onViewAll?.();
-          }}
+          onClick={(e) => { e.preventDefault(); onViewAll?.(); }}
           className="font-body-sm text-body-sm text-secondary hover:underline cursor-pointer bg-transparent border-none p-0"
         >
           View All
@@ -38,20 +44,30 @@ const RecentTransactions = ({ onViewAll }: RecentTransactionsProps) => {
             </tr>
           </thead>
           <tbody className="font-body-sm text-body-sm text-on-surface">
-            {transactions.map((tx, idx) => (
-              <tr key={idx} className="border-b border-surface-variant hover:bg-surface-container-low/50 transition-colors h-[56px]">
-                <td className="py-3 px-6 whitespace-nowrap">{tx.date}</td>
-                <td className="py-3 px-6 whitespace-nowrap">
-                  <span className={`${tx.typeClass} px-2 py-1 rounded text-[11px] font-label-caps`}>{tx.type}</span>
-                </td>
-                <td className="py-3 px-6 whitespace-nowrap flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{tx.icon}</span> {tx.category}
-                </td>
-                <td className="py-3 px-6 whitespace-nowrap">{tx.wallet}</td>
-                <td className="py-3 px-6 hidden sm:table-cell text-on-surface-variant truncate max-w-[200px]">{tx.desc}</td>
-                <td className={`py-3 px-6 whitespace-nowrap text-right font-data-md ${tx.amountClass}`}>{tx.amount}</td>
-              </tr>
-            ))}
+            {(transactions || []).map((tx) => {
+              const display = getTypeDisplay(tx);
+              const amountPrefix = tx.type === 'income' ? '+ ' : tx.type === 'expense' ? '- ' : '';
+              const amountClass = tx.type === 'income' ? 'text-secondary' : tx.type === 'expense' ? 'text-on-surface' : 'text-on-surface';
+              const walletLabel = tx.type === 'transfer' ? `${tx.wallet_name} → ${tx.to_wallet_name}` : tx.wallet_name;
+
+              return (
+                <tr key={tx.id} className="border-b border-surface-variant hover:bg-surface-container-low/50 transition-colors h-[56px]">
+                  <td className="py-3 px-6 whitespace-nowrap">{formatDate(tx.date)}</td>
+                  <td className="py-3 px-6 whitespace-nowrap">
+                    <span className={`${display.typeClass} px-2 py-1 rounded text-[11px] font-label-caps`}>{display.label}</span>
+                  </td>
+                  <td className="py-3 px-6 whitespace-nowrap flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{display.icon}</span> {tx.category_name || tx.type}
+                  </td>
+                  <td className="py-3 px-6 whitespace-nowrap">{walletLabel}</td>
+                  <td className="py-3 px-6 hidden sm:table-cell text-on-surface-variant truncate max-w-[200px]">{tx.note || '-'}</td>
+                  <td className={`py-3 px-6 whitespace-nowrap text-right font-data-md ${amountClass}`}>{amountPrefix}{formatRp(tx.amount)}</td>
+                </tr>
+              );
+            })}
+            {(!transactions || transactions.length === 0) && (
+              <tr><td colSpan={6} className="py-8 text-center text-on-surface-variant">Belum ada transaksi</td></tr>
+            )}
           </tbody>
         </table>
       </div>

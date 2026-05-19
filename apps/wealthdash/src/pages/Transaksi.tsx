@@ -1,3 +1,7 @@
+import { useState, useEffect } from 'react';
+import { useApi, formatRp } from '../hooks/useApi';
+import { transactionsApi, categoriesApi, walletsApi } from '../services/api';
+import type { Transaction, TransactionFilters } from '../types';
 import TransactionFilterBar from '../components/TransactionFilterBar';
 import TransactionCharts from '../components/TransactionCharts';
 import TransactionFullTable from '../components/TransactionFullTable';
@@ -7,9 +11,42 @@ interface TransaksiProps {
   onOpenTransaction: () => void;
   onEditTransaction: (tx: any) => void;
   onViewCategories: () => void;
+  refreshTrigger?: number;
 }
 
-const Transaksi = ({ onOpenTransaction, onEditTransaction, onViewCategories }: TransaksiProps) => {
+const Transaksi = ({ onOpenTransaction, onEditTransaction, onViewCategories, refreshTrigger }: TransaksiProps) => {
+  const [filters, setFilters] = useState<TransactionFilters>({ page: 1, limit: 20 });
+
+  const { data: txData, refetch } = useApi(
+    () => transactionsApi.list(filters),
+    [JSON.stringify(filters)]
+  );
+
+  // Refetch when refreshTrigger changes (e.g. after saving a transaction from modal)
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Hapus transaksi ini?')) return;
+    try {
+      await transactionsApi.delete(id);
+      refetch();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleFilterChange = (newFilters: Partial<TransactionFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop mb-20 md:mb-0 max-w-container-max-width mx-auto w-full flex flex-col gap-5">
       {/* Header */}
@@ -30,18 +67,25 @@ const Transaksi = ({ onOpenTransaction, onEditTransaction, onViewCategories }: T
       <TransactionCharts onViewCategories={onViewCategories} />
 
       {/* Filter Bar */}
-      <TransactionFilterBar />
+      <TransactionFilterBar 
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
 
       {/* Content */}
       <div className="flex-1">
-        <TransactionFullTable 
-          onEdit={onEditTransaction} 
-          onDelete={(id) => alert(`Delete transaction ${id}`)} 
-        />
+        {txData && txData.transactions.length > 0 ? (
+          <TransactionFullTable 
+            transactions={txData.transactions}
+            pagination={txData.pagination}
+            onEdit={onEditTransaction} 
+            onDelete={handleDelete}
+            onPageChange={handlePageChange}
+          />
+        ) : (
+          <TransactionEmptyState />
+        )}
       </div>
-
-      {/* Empty State (Hidden by default for demonstration) */}
-      <TransactionEmptyState />
     </div>
   );
 };

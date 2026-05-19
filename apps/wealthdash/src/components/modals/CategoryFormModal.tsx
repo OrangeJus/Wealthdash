@@ -6,16 +6,17 @@ interface CategoryFormModalProps {
   onClose: () => void;
   editMode?: boolean;
   initialData?: any;
+  onSave?: (data: any) => void;
+  onDelete?: () => void;
 }
 
-const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: CategoryFormModalProps) => {
+const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData, onSave, onDelete }: CategoryFormModalProps) => {
   const [name, setName] = useState('');
   const [type, setType] = useState('expense');
   const [icon, setIcon] = useState('category');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [budget, setBudget] = useState('');
 
-  // Icon options
   const icons = [
     { id: 'restaurant', name: 'Makanan' },
     { id: 'shopping_cart', name: 'Belanja' },
@@ -32,7 +33,7 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
       setName(initialData.name || '');
       setType(initialData.type || 'expense');
       setIcon(initialData.icon || 'category');
-      setLogoUrl(initialData.logoUrl || null);
+      setLogoUrl(initialData.logo_path || null);
       setBudget(initialData.budget ? initialData.budget.toString() : '');
     } else if (isOpen) {
       setName('');
@@ -52,6 +53,17 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave?.({
+      name: name.trim(),
+      type,
+      icon,
+      logo_path: logoUrl,
+      budget: budget ? Number(budget) : null,
+    });
   };
 
   return (
@@ -114,10 +126,7 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5 flex justify-between items-center">
             Ikon / Logo
             {logoUrl && (
-              <button 
-                onClick={() => setLogoUrl(null)}
-                className="text-[12px] text-error hover:underline flex items-center"
-              >
+              <button onClick={() => setLogoUrl(null)} className="text-[12px] text-error hover:underline flex items-center">
                 Hapus Logo
               </button>
             )}
@@ -162,14 +171,17 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: C
 
         {/* Action Buttons */}
         <div className="flex gap-3 mt-4">
-          {editMode && (
-            <button className="flex-1 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 border border-error text-error hover:bg-error/10 transition-colors">
+          {editMode && onDelete && (
+            <button 
+              onClick={onDelete}
+              className="flex-1 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 border border-error text-error hover:bg-error/10 transition-colors"
+            >
               <span className="material-symbols-outlined text-[18px]">delete</span>
               Hapus
             </button>
           )}
           <button 
-            onClick={onClose}
+            onClick={handleSave}
             disabled={!name}
             className={`py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${editMode ? 'flex-[2]' : 'w-full'}`}
           >

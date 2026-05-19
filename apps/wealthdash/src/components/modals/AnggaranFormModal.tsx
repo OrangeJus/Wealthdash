@@ -5,9 +5,10 @@ interface AnggaranFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'bill' | 'wishlist';
+  onSave?: (data: any) => void;
 }
 
-const AnggaranFormModal = ({ isOpen, onClose, mode }: AnggaranFormModalProps) => {
+const AnggaranFormModal = ({ isOpen, onClose, mode, onSave }: AnggaranFormModalProps) => {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
@@ -100,7 +101,15 @@ const AnggaranFormModal = ({ isOpen, onClose, mode }: AnggaranFormModalProps) =>
         {/* Action Buttons */}
         <div className="mt-4">
           <button 
-            onClick={onClose}
+            onClick={() => {
+              if (!name || !amount) return;
+              onSave?.({
+                name: name.trim(),
+                estimate: Number(amount),
+                category: category || null,
+                type: isWishlist ? 'wishlist' : billType.toLowerCase(),
+              });
+            }}
             disabled={!name || !amount}
             className="w-full py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >

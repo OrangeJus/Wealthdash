@@ -1,8 +1,13 @@
+import { useApi, formatRp } from '../hooks/useApi';
+import { analyticsApi } from '../services/api';
 import IncomeExpenseChart from '../components/IncomeExpenseChart';
 import TopExpenses from '../components/TopExpenses';
 import SavingsRateChart from '../components/SavingsRateChart';
+interface AnalyticsProps {
+  refreshTrigger?: number;
+}
 
-const Analytics = () => {
+const Analytics = ({ refreshTrigger = 0 }: AnalyticsProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop w-full max-w-container-max-width mx-auto">
       <div className="flex flex-col gap-card-gap pb-12">
@@ -24,8 +29,8 @@ const Analytics = () => {
 
         {/* Section 2: Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
-          <TopExpenses />
-          <SavingsRateChart />
+          <TopExpenses refreshTrigger={refreshTrigger} />
+          <SavingsRateChart refreshTrigger={refreshTrigger} />
         </div>
       </div>
     </div>

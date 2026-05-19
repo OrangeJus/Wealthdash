@@ -1,73 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
+import { formatRp } from '../../hooks/useApi';
+import type { Wallet, SavingsTarget } from '../../types';
 
 interface SavingsTopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
+  targets?: SavingsTarget[];
+  wallets?: Wallet[];
+  onSave?: (data: any) => void;
 }
 
-const SavingsTopUpModal = ({ isOpen, onClose }: SavingsTopUpModalProps) => {
+const SavingsTopUpModal = ({ isOpen, onClose, targets = [], wallets = [], onSave }: SavingsTopUpModalProps) => {
+  const [targetId, setTargetId] = useState('');
+  const [walletId, setWalletId] = useState('');
   const [amount, setAmount] = useState('');
-  const [reason, setReason] = useState('');
 
-  const currentTarget = 400000;
-  const numAmount = Number(amount) || 0;
-  const newTarget = currentTarget + numAmount;
+  useEffect(() => {
+    if (isOpen) {
+      setAmount('');
+      setTargetId(targets.length > 0 ? targets[0].id : '');
+      setWalletId(wallets.length > 0 ? wallets[0].id : '');
+    }
+  }, [isOpen, targets, wallets]);
+
+  const selectedWallet = wallets.find(w => w.id === walletId);
+
+  const handleSubmit = () => {
+    if (!targetId || !walletId || !amount) return;
+    onSave?.({
+      target_id: targetId,
+      wallet_id: walletId,
+      amount: Number(amount),
+      type: 'topup',
+    });
+    onClose();
+  };
 
   return (
-    <ModalOverlay isOpen={isOpen} onClose={onClose} title="Top-Up Target Tabungan" width="max-w-md">
+    <ModalOverlay isOpen={isOpen} onClose={onClose} title="Top-Up Tabungan" width="max-w-md">
       <div className="flex flex-col gap-5">
         
-        {/* Info Box */}
-        <div className="bg-surface-container-low rounded-xl p-4 font-body-sm text-body-sm text-on-surface-variant flex flex-col gap-1">
-          <p>Target saat ini: <span className="font-semibold text-on-surface">Rp {currentTarget.toLocaleString('id-ID')}</span></p>
-          <p className="text-[12px] opacity-80">(Rutin 250K + Rollover 100K + TopUp 50K)</p>
+        <div>
+          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Target Tabungan</label>
+          <select value={targetId} onChange={(e) => setTargetId(e.target.value)}
+            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none">
+            {targets.map(t => (
+              <option key={t.id} value={t.id}>{t.name} ({formatRp(t.monthly_amount)}/bln)</option>
+            ))}
+          </select>
         </div>
 
         <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Tambah Target</label>
+          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Dari Dompet</label>
+          <select value={walletId} onChange={(e) => setWalletId(e.target.value)}
+            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none">
+            {wallets.map(w => (
+              <option key={w.id} value={w.id}>{w.name} ({formatRp(w.balance)})</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Nominal Top-Up</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
-            <input 
-              type="number" 
-              placeholder="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md font-data-md"
-            />
+            <input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md font-data-md" />
           </div>
         </div>
 
-        <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Alasan</label>
-          <input 
-            type="text" 
-            placeholder="Contoh: Bonus dari kantor"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
-          />
+        <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-xl p-3 flex items-start gap-2 mt-2">
+          <span className="material-symbols-outlined text-[#0284c7] text-[18px] mt-0.5">info</span>
+          <p className="font-body-sm text-body-sm text-[#0c4a6e]">
+            Top-up ini akan menambah progres tabungan bulan ini.
+            {selectedWallet && <><br/>Saldo {selectedWallet.name}: {formatRp(selectedWallet.balance)}</>}
+          </p>
         </div>
 
-        {/* Calculation Box */}
-        <div className="border border-outline-variant/30 rounded-xl p-4 mt-2 bg-surface-container-lowest">
-          <div className="flex justify-between items-center font-body-sm text-body-sm">
-            <span className="text-on-surface-variant">Target Baru Bulan Ini</span>
-            <span className="font-data-sm font-semibold text-secondary">
-              Rp {newTarget.toLocaleString('id-ID')}
-            </span>
-          </div>
-        </div>
-
-        <button 
-          onClick={onClose}
-          disabled={!amount || Number(amount) <= 0}
-          className="w-full mt-2 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSubmit} disabled={!amount || Number(amount) <= 0}
+          className="w-full mt-2 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <span className="material-symbols-outlined text-[18px]">add_circle</span>
-          Tambah Target
+          Top-Up Tabungan
         </button>
-
       </div>
     </ModalOverlay>
   );

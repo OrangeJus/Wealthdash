@@ -1,6 +1,10 @@
 import { useState } from 'react';
+import { useApi, formatRp } from '../hooks/useApi';
+import { walletsApi, transactionsApi } from '../services/api';
+import type { TransactionFilters } from '../types';
 import TransactionFilterBar from '../components/TransactionFilterBar';
 import TransactionFullTable from '../components/TransactionFullTable';
+import TransactionEmptyState from '../components/TransactionEmptyState';
 import WalletFormModal from '../components/modals/WalletFormModal';
 
 interface WalletDetailProps {
@@ -12,19 +16,70 @@ interface WalletDetailProps {
 
 const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }: WalletDetailProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [filters, setFilters] = useState<TransactionFilters>({ page: 1, limit: 20, wallet_id: walletId });
 
-  // In a real app, fetch wallet data based on walletId.
-  // Using dummy data for now.
-  const walletData = {
-    id: walletId,
-    name: walletId === 'gopay' ? 'GoPay' : walletId === 'bca' ? 'BCA' : 'Wallet',
-    icon: walletId === 'bca' ? 'account_balance' : 'account_balance_wallet',
-    logoUrl: undefined as string | undefined, // Mock for logoUrl
-    cluster: walletId === 'bca' ? 'Savings' : 'Liquid Cash',
-    balance: walletId === 'bca' ? 'Rp 8.000.000' : 'Rp 350.000',
-    iconBgClass: walletId === 'bca' ? 'bg-tertiary-fixed' : 'bg-secondary-fixed',
-    iconTextClass: walletId === 'bca' ? 'text-on-tertiary-fixed' : 'text-on-secondary-fixed',
+  const { data: walletsData, refetch: refetchWallets } = useApi(() => walletsApi.list(), []);
+  const { data: txData, refetch: refetchTx } = useApi(
+    () => transactionsApi.list(filters),
+    [JSON.stringify(filters)]
+  );
+
+  const wallet = walletsData?.wallets?.find((w: any) => w.id === walletId);
+
+  const handleFilterChange = (newFilters: Partial<TransactionFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, wallet_id: walletId, page: 1 }));
   };
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Hapus transaksi ini?')) return;
+    try {
+      await transactionsApi.delete(id);
+      refetchTx();
+      refetchWallets();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleSaveWallet = async (data: any) => {
+    try {
+      await walletsApi.update(walletId, data);
+      setIsEditModalOpen(false);
+      refetchWallets();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteWallet = async () => {
+    if (!confirm('Hapus dompet ini? Semua transaksi terkait juga akan terhapus.')) return;
+    try {
+      await walletsApi.delete(walletId);
+      onBack();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const iconBgMap: Record<string, string> = {
+    liquid: 'bg-secondary-fixed text-on-secondary-fixed',
+    savings: 'bg-tertiary-fixed text-on-tertiary-fixed',
+    investment: 'bg-primary-fixed text-on-primary-fixed',
+  };
+
+  if (!wallet) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <p className="text-on-surface-variant">Memuat data dompet...</p>
+      </div>
+    );
+  }
+
+  const iconClasses = iconBgMap[wallet.cluster] || iconBgMap.liquid;
 
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop bg-background max-w-container-max-width mx-auto w-full flex flex-col gap-6">
@@ -40,19 +95,19 @@ const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            {walletData.logoUrl ? (
+            {wallet.logo_path ? (
               <div className="w-14 h-14 rounded-2xl border border-outline-variant/30 overflow-hidden bg-white shadow-sm flex items-center justify-center p-1.5 shrink-0">
-                <img src={walletData.logoUrl} alt={walletData.name} className="w-full h-full object-contain" />
+                <img src={wallet.logo_path} alt={wallet.name} className="w-full h-full object-contain" />
               </div>
             ) : (
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${walletData.iconBgClass} ${walletData.iconTextClass} shrink-0 shadow-sm`}>
-                <span className="material-symbols-outlined text-[28px]">{walletData.icon}</span>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${iconClasses} shrink-0 shadow-sm`}>
+                <span className="material-symbols-outlined text-[28px]">{wallet.icon}</span>
               </div>
             )}
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-display-lg-mobile md:font-display-lg text-[24px] md:text-[28px] font-bold text-on-surface">{walletData.name}</h2>
-                <span className="bg-surface-variant text-on-surface-variant font-label-caps text-[10px] px-2 py-1 rounded-md uppercase">{walletData.cluster}</span>
+                <h2 className="font-display-lg-mobile md:font-display-lg text-[24px] md:text-[28px] font-bold text-on-surface">{wallet.name}</h2>
+                <span className="bg-surface-variant text-on-surface-variant font-label-caps text-[10px] px-2 py-1 rounded-md uppercase">{wallet.cluster}</span>
                 <button 
                   onClick={() => setIsEditModalOpen(true)}
                   className="ml-2 text-on-surface-variant hover:text-on-surface bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 p-1.5 rounded-lg transition-colors flex items-center shadow-sm"
@@ -61,7 +116,7 @@ const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>
               </div>
-              <p className="font-data-lg text-data-lg text-on-surface mt-1">{walletData.balance}</p>
+              <p className="font-data-lg text-data-lg text-on-surface mt-1">{formatRp(wallet.balance)}</p>
             </div>
           </div>
           
@@ -75,15 +130,25 @@ const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }
         </div>
       </header>
 
-      {/* Filter & Transactions (Filtered by this wallet in real app) */}
+      {/* Filter & Transactions */}
       <div className="mt-4">
-        <h3 className="font-headline-md text-headline-md font-semibold mb-4 text-on-surface">Riwayat Transaksi {walletData.name}</h3>
-        <TransactionFilterBar />
+        <h3 className="font-headline-md text-headline-md font-semibold mb-4 text-on-surface">Riwayat Transaksi {wallet.name}</h3>
+        <TransactionFilterBar 
+          filters={filters}
+          onFilterChange={handleFilterChange}
+        />
         <div className="mt-4">
-          <TransactionFullTable 
-            onEdit={onEditTransaction} 
-            onDelete={(id) => alert(`Delete transaction ${id} from wallet`)} 
-          />
+          {txData && txData.transactions.length > 0 ? (
+            <TransactionFullTable 
+              transactions={txData.transactions}
+              pagination={txData.pagination}
+              onEdit={onEditTransaction} 
+              onDelete={handleDelete}
+              onPageChange={handlePageChange}
+            />
+          ) : (
+            <TransactionEmptyState />
+          )}
         </div>
       </div>
 
@@ -91,7 +156,9 @@ const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
         editMode={true}
-        initialData={walletData}
+        initialData={wallet}
+        onSave={handleSaveWallet}
+        onDelete={handleDeleteWallet}
       />
     </div>
   );

@@ -1,45 +1,55 @@
+import { formatRp } from '../hooks/useApi';
+import type { SavingsProgress } from '../types';
+
 interface TargetCompositionCardProps {
+  progress?: SavingsProgress | null;
   onTopUp?: () => void;
-  onEditRoutine?: () => void;
 }
 
-const TargetCompositionCard = ({ onTopUp, onEditRoutine }: TargetCompositionCardProps) => {
+const TargetCompositionCard = ({ progress, onTopUp }: TargetCompositionCardProps) => {
   return (
-    <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant p-6 flex flex-col justify-between">
-      <div>
-        <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase">Komposisi Target</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="flex flex-col gap-1">
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Target Rutin</span>
-            <span className="font-data-md text-data-md text-on-surface">Rp 250.000</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Top-Up</span>
-            <span className="font-data-md text-data-md text-on-surface">Rp 50.000</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Rollover</span>
-            <span className="font-data-md text-data-md text-on-surface">Rp 100.000</span>
-          </div>
+    <div className="lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-6 shadow-sm">
+      <div className="flex justify-between items-center">
+        <h3 className="font-headline-md text-headline-md text-on-surface">Komposisi Target</h3>
+        <button
+          onClick={onTopUp}
+          className="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary rounded-lg font-label-caps text-label-caps shadow-sm hover:opacity-90 transition-opacity"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Top Up
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-surface-container-low rounded-xl p-4">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Target Bulanan</p>
+          <p className="font-data-md text-data-md font-bold">{progress ? formatRp(progress.totalTarget) : '...'}</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Rutin</p>
+          <p className="font-data-md text-data-md font-bold text-secondary">{progress ? formatRp(progress.routineDeposited) : '...'}</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Top-up</p>
+          <p className="font-data-md text-data-md font-bold text-tertiary">{progress ? formatRp(progress.topupDeposited) : '...'}</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Rollover</p>
+          <p className="font-data-md text-data-md font-bold text-error">{progress ? formatRp(progress.rollover) : '...'}</p>
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end p-4 bg-surface-container-low rounded-lg border border-surface-variant mt-4">
-        <div className="flex flex-col gap-1 mb-4 sm:mb-0">
-          <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Total Target Bulan Ini</span>
-          <span className="font-data-lg text-data-lg text-on-surface flex items-center gap-2">
-            Rp 400.000
-            <button 
-              onClick={onTopUp}
-              className="ml-2 text-[11px] font-label-caps px-2 py-1 bg-surface-container border border-outline-variant rounded hover:bg-surface-variant transition-colors flex items-center gap-1 text-on-surface"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Top-Up
-            </button>
-          </span>
-        </div>
-        <div className="flex flex-col sm:items-end gap-1">
-          <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Remaining</span>
-          <span className="font-data-md text-data-md text-error">Rp 80.000</span>
-        </div>
+
+      {/* Targets list */}
+      <div className="flex flex-col gap-3">
+        {(progress?.targets || []).map((t) => (
+          <div key={t.id} className="flex items-center justify-between bg-surface-container rounded-lg px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-secondary">{t.icon}</span>
+              <span className="font-body-sm text-body-sm font-medium">{t.name}</span>
+            </div>
+            <span className="font-data-sm text-data-sm">{formatRp(t.monthly_amount)}/bln</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,264 +1,269 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useApi } from '../hooks/useApi';
+import { walletsApi, categoriesApi } from '../services/api';
+import type { TransactionFilters } from '../types';
 import CustomDateModal from './modals/CustomDateModal';
 
-interface FilterState {
-  search: string;
-  dateRange: string;
-  customStartDate?: string;
-  customEndDate?: string;
-  wallet: string;
-  category: string;
-  type: string;
+interface TransactionFilterBarProps {
+  filters: TransactionFilters;
+  onFilterChange: (newFilters: Partial<TransactionFilters>) => void;
 }
 
-interface CustomView {
+interface SavedFilter {
   id: string;
   name: string;
-  filters: FilterState;
-  isCustom: boolean;
+  filter: Partial<TransactionFilters>;
 }
 
-const DEFAULT_VIEWS: CustomView[] = [
-  { id: 'all', name: 'Semua Transaksi', isCustom: false, filters: { search: '', dateRange: '', wallet: '', category: '', type: '' } },
-  { id: 'expenses', name: 'Pengeluaran', isCustom: false, filters: { search: '', dateRange: '', wallet: '', category: '', type: 'expense' } },
-  { id: 'incomes', name: 'Pemasukan', isCustom: false, filters: { search: '', dateRange: '', wallet: '', category: '', type: 'income' } },
-  { id: 'this_month', name: 'Bulan Ini', isCustom: false, filters: { search: '', dateRange: 'this_month', wallet: '', category: '', type: '' } },
-];
-
-const TransactionFilterBar = () => {
-  const [views, setViews] = useState<CustomView[]>(DEFAULT_VIEWS);
-  const [activeViewId, setActiveViewId] = useState('all');
-  
+const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [newViewName, setNewViewName] = useState('');
-
-  // Current temporary filter state before saving
-  const [currentFilters, setCurrentFilters] = useState<FilterState>({
-    search: '', dateRange: '', wallet: '', category: '', type: ''
-  });
-
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-  const [previousDateRange, setPreviousDateRange] = useState('');
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [newFilterName, setNewFilterName] = useState('');
+  const [isSavingFilter, setIsSavingFilter] = useState(false);
 
-  const handleSelectView = (view: CustomView) => {
-    setActiveViewId(view.id);
-    setCurrentFilters(view.filters);
+  // Fetch wallets and categories for dropdown options
+  const { data: walletsData } = useApi(() => walletsApi.list(), []);
+  const { data: categoriesData } = useApi(() => categoriesApi.list(), []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('wealthdash_saved_filters');
+    if (saved) {
+      try {
+        setSavedFilters(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse saved filters', e);
+      }
+    }
+  }, []);
+
+  const saveFilterToStorage = (newFilters: SavedFilter[]) => {
+    localStorage.setItem('wealthdash_saved_filters', JSON.stringify(newFilters));
+    setSavedFilters(newFilters);
   };
 
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
-    if (key === 'dateRange' && value === 'custom_trigger') {
-      setPreviousDateRange(currentFilters.dateRange);
-      setIsDateModalOpen(true);
-      return;
-    }
-    setCurrentFilters({ ...currentFilters, [key]: value });
+  const handleSaveCurrentFilter = () => {
+    if (!newFilterName.trim()) return;
+    
+    const newFilter: SavedFilter = {
+      id: Date.now().toString(),
+      name: newFilterName.trim(),
+      filter: {
+        type: filters.type,
+        wallet_id: filters.wallet_id,
+        category_id: filters.category_id,
+        period: filters.period,
+        date_from: filters.date_from,
+        date_to: filters.date_to,
+      }
+    };
+
+    saveFilterToStorage([...savedFilters, newFilter]);
+    setNewFilterName('');
+    setIsSavingFilter(false);
+  };
+
+  const handleDeleteSavedFilter = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    saveFilterToStorage(savedFilters.filter(f => f.id !== id));
+  };
+
+  const applySavedFilter = (savedFilter: SavedFilter) => {
+    onFilterChange({
+      type: savedFilter.filter.type,
+      wallet_id: savedFilter.filter.wallet_id,
+      category_id: savedFilter.filter.category_id,
+      period: savedFilter.filter.period,
+      date_from: savedFilter.filter.date_from,
+      date_to: savedFilter.filter.date_to,
+    });
+  };
+
+  // Quick tab views
+  const tabs = [
+    { id: 'all', label: 'Semua', filter: { type: undefined } },
+    { id: 'expense', label: 'Pengeluaran', filter: { type: 'expense' } },
+    { id: 'income', label: 'Pemasukan', filter: { type: 'income' } },
+    { id: 'transfer', label: 'Transfer', filter: { type: 'transfer' } },
+  ];
+
+  const activeTab = filters.type || 'all';
+
+  const handleTabClick = (tab: typeof tabs[0]) => {
+    onFilterChange({ type: tab.filter.type });
   };
 
   const handleApplyCustomDate = (startDate: string, endDate: string) => {
-    setCurrentFilters({
-      ...currentFilters,
-      dateRange: 'custom',
-      customStartDate: startDate,
-      customEndDate: endDate
-    });
+    onFilterChange({ date_from: startDate, date_to: endDate, period: undefined });
     setIsDateModalOpen(false);
   };
-
-  const handleCancelCustomDate = () => {
-    setIsDateModalOpen(false);
-    // If they were previously on something else, revert. If they were already on 'custom', leave it.
-    if (currentFilters.dateRange !== 'custom') {
-      setCurrentFilters({ ...currentFilters, dateRange: previousDateRange });
-    }
-  };
-
-  const handleSaveView = () => {
-    if (!newViewName.trim()) return;
-    
-    const newView: CustomView = {
-      id: `custom_${Date.now()}`,
-      name: newViewName,
-      filters: { ...currentFilters },
-      isCustom: true
-    };
-    
-    setViews([...views, newView]);
-    setActiveViewId(newView.id);
-    setNewViewName('');
-    setShowAdvanced(false); // Auto close advanced after saving
-  };
-
-  const handleDeleteView = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent selecting the view when clicking delete
-    const newViews = views.filter(v => v.id !== id);
-    setViews(newViews);
-    if (activeViewId === id) {
-      handleSelectView(newViews[0]); // fallback to 'all'
-    }
-  };
-
-  const activeView = views.find(v => v.id === activeViewId);
 
   return (
     <>
       <section className="bg-surface-container-lowest border border-outline-variant/50 rounded-xl shadow-sm flex flex-col transition-all">
-      
-      {/* ROW 1: Quick Tabs & Toggle */}
-      <div className="flex items-center justify-between p-2">
-        {/* Scrollable Tabs */}
-        <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide px-2">
-          {views.map(view => {
-            const isActive = activeViewId === view.id;
-            return (
-              <button 
-                key={view.id}
-                onClick={() => handleSelectView(view)}
-                className={`group whitespace-nowrap pl-4 pr-3 py-2 rounded-lg font-label-caps text-[13px] font-semibold transition-all flex items-center gap-2 ${
-                  isActive 
-                  ? 'bg-secondary text-on-secondary shadow-sm' 
-                  : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-                }`}
-              >
-                {view.name}
-                {view.isCustom && (
-                  <span 
-                    onClick={(e) => handleDeleteView(e, view.id)}
-                    className={`material-symbols-outlined text-[14px] p-0.5 rounded-full opacity-50 hover:opacity-100 transition-opacity ${isActive ? 'hover:bg-on-secondary/20' : 'hover:bg-outline-variant'}`}
-                  >
-                    close
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* ROW 1: Quick Tabs & Toggle */}
+        <div className="flex items-center justify-between p-2">
+          <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide px-2">
+            {tabs.map(tab => {
+              const isActive = (tab.id === 'all' && !activeTab) || tab.id === activeTab;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-lg font-label-caps text-[13px] font-semibold transition-all ${
+                    isActive
+                      ? 'bg-secondary text-on-secondary shadow-sm'
+                      : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-outline-variant/30 pl-2 ml-2 pr-2">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-label-caps text-[12px] transition-colors ${
+                showAdvanced ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">tune</span>
+              Filter {showAdvanced ? 'Tutup' : ''}
+            </button>
+          </div>
         </div>
 
-        {/* Filter Toggle Button */}
-        <div className="flex items-center gap-2 border-l border-outline-variant/30 pl-2 ml-2 pr-2">
-          <button 
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-label-caps text-[12px] transition-colors ${
-              showAdvanced ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">tune</span>
-            Filter {showAdvanced ? 'Tutup' : ''}
-          </button>
-        </div>
-      </div>
-
-      {/* ROW 2: Advanced Filters (Collapsible) */}
-      {showAdvanced && (
-        <div className="p-4 border-t border-outline-variant/30 bg-surface-container-lowest rounded-b-xl flex flex-col gap-5 animate-in slide-in-from-top-2 duration-200">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
-            {/* Search */}
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-              <input 
-                type="text" 
-                placeholder="Cari transaksi..." 
-                value={currentFilters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors" 
-              />
-            </div>
-            
-            {/* Date Range */}
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">calendar_today</span>
-              <select 
-                value={currentFilters.dateRange === 'custom' ? 'custom' : currentFilters.dateRange}
-                onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors appearance-none"
+        {/* ROW 2: Advanced Filters */}
+        {showAdvanced && (
+          <div className="p-4 border-t border-outline-variant/30 bg-surface-container-lowest rounded-b-xl flex flex-col gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+              {/* Wallet */}
+              <select
+                value={filters.wallet_id || ''}
+                onChange={(e) => onFilterChange({ wallet_id: e.target.value || undefined })}
+                className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
               >
-                {currentFilters.dateRange === 'custom' && (
-                  <option value="custom">
-                    {currentFilters.customEndDate 
-                      ? `${new Date(currentFilters.customStartDate!).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - ${new Date(currentFilters.customEndDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
-                      : new Date(currentFilters.customStartDate!).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                    }
-                  </option>
-                )}
-                <option value="">Semua Waktu</option>
-                <option value="this_month">Bulan Ini</option>
-                <option value="last_month">Bulan Lalu</option>
-                <option value="last_3_months">3 Bulan Terakhir</option>
-                <option value="this_year">Tahun Ini</option>
-                <option value="last_year">Tahun Lalu</option>
-                <option value="custom_trigger">{currentFilters.dateRange === 'custom' ? 'Ubah Tanggal Kustom...' : 'Pilih Tanggal Kustom...'}</option>
+                <option value="">Semua Dompet</option>
+                {(walletsData?.wallets || []).map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
               </select>
-            </div>
-            
-            {/* Wallet */}
-            <select 
-              value={currentFilters.wallet}
-              onChange={(e) => handleFilterChange('wallet', e.target.value)}
-              className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
-            >
-              <option value="">Semua Dompet</option>
-              <option value="bca">BCA Utama</option>
-              <option value="gopay">GoPay</option>
-            </select>
-            
-            {/* Category */}
-            <select 
-              value={currentFilters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
-            >
-              <option value="">Semua Kategori</option>
-              <option value="food">Makanan</option>
-              <option value="transport">Transport</option>
-            </select>
 
-            {/* Type */}
-            <select 
-              value={currentFilters.type}
-              onChange={(e) => handleFilterChange('type', e.target.value)}
-              className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
-            >
-              <option value="">Semua Tipe</option>
-              <option value="income">Pemasukan</option>
-              <option value="expense">Pengeluaran</option>
-            </select>
-          </div>
-
-          {/* Save Custom View Block */}
-          <div className="bg-[#f0f9ff] dark:bg-primary/10 border border-[#bae6fd] dark:border-primary/20 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h5 className="font-label-caps text-[12px] font-bold text-primary dark:text-primary-fixed">SIMPAN FILTER INI</h5>
-              <p className="font-body-sm text-[12px] text-on-surface-variant mt-1">Sering pakai kombinasi filter di atas? Simpan sebagai Tab View agar gampang diakses nanti!</p>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <input 
-                type="text" 
-                placeholder="Contoh: Makan BCA" 
-                value={newViewName}
-                onChange={(e) => setNewViewName(e.target.value)}
-                className="flex-1 sm:w-48 px-3 py-2 text-[13px] rounded-lg border border-outline-variant focus:outline-none focus:border-primary bg-white dark:bg-surface-container-lowest"
-              />
-              <button 
-                onClick={handleSaveView}
-                disabled={!newViewName.trim()}
-                className="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-caps text-[12px] whitespace-nowrap disabled:opacity-50 transition-colors"
+              {/* Category */}
+              <select
+                value={filters.category_id || ''}
+                onChange={(e) => onFilterChange({ category_id: e.target.value || undefined })}
+                className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
               >
-                Simpan
+                <option value="">Semua Kategori</option>
+                {(categoriesData?.all || []).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+
+              {/* Period */}
+              <select
+                value={filters.date_from ? 'custom' : (filters.period || '')}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    setIsDateModalOpen(true);
+                    return;
+                  }
+                  onFilterChange({ period: e.target.value || undefined, date_from: undefined, date_to: undefined });
+                }}
+                className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
+              >
+                <option value="">Semua Waktu</option>
+                <option value={new Date().toISOString().substring(0, 7)}>Bulan Ini</option>
+                <option value="custom">Tanggal Kustom...</option>
+              </select>
+
+              {/* Clear filters */}
+              <button
+                onClick={() => onFilterChange({ type: undefined, wallet_id: undefined, category_id: undefined, period: undefined, date_from: undefined, date_to: undefined })}
+                className="px-4 py-2 border border-outline-variant rounded-lg font-label-caps text-[12px] text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              >
+                Reset Filter
               </button>
             </div>
+
+            {/* Custom Date Info & Save Filter */}
+            {filters.date_from && filters.date_to && (
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-primary/5 p-3 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[18px]">event</span>
+                  <span className="font-body-sm text-primary">
+                    {filters.date_from} hingga {filters.date_to}
+                  </span>
+                </div>
+                {!isSavingFilter ? (
+                  <button 
+                    onClick={() => setIsSavingFilter(true)}
+                    className="text-[12px] font-label-caps bg-primary text-on-primary px-3 py-1.5 rounded hover:bg-primary/90 transition-colors"
+                  >
+                    Simpan Filter Ini
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <input 
+                      type="text" 
+                      value={newFilterName}
+                      onChange={(e) => setNewFilterName(e.target.value)}
+                      placeholder="Nama Filter (mis. Liburan Bali)"
+                      className="flex-1 px-3 py-1.5 text-sm rounded border border-outline focus:border-primary outline-none"
+                      autoFocus
+                    />
+                    <button 
+                      onClick={handleSaveCurrentFilter}
+                      className="text-primary hover:text-primary/80 font-bold text-sm px-2"
+                    >
+                      Simpan
+                    </button>
+                    <button 
+                      onClick={() => setIsSavingFilter(false)}
+                      className="text-on-surface-variant hover:text-on-surface text-sm px-2"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Saved Filters List */}
+            {savedFilters.length > 0 && (
+              <div className="border-t border-outline-variant/30 pt-4 mt-2">
+                <h4 className="font-label-caps text-[11px] text-on-surface-variant uppercase mb-3">Filter Tersimpan</h4>
+                <div className="flex flex-wrap gap-2">
+                  {savedFilters.map(sf => (
+                    <div 
+                      key={sf.id}
+                      onClick={() => applySavedFilter(sf)}
+                      className="flex items-center gap-2 bg-surface-container hover:bg-surface-container-high transition-colors px-3 py-1.5 rounded-full cursor-pointer group border border-transparent hover:border-outline-variant/50"
+                    >
+                      <span className="material-symbols-outlined text-[14px] text-primary">bookmark</span>
+                      <span className="font-body-sm text-[13px] text-on-surface">{sf.name}</span>
+                      <button 
+                        onClick={(e) => handleDeleteSavedFilter(sf.id, e)}
+                        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        )}
+      </section>
 
-        </div>
-      )}
-
-    </section>
-      
-      <CustomDateModal 
+      <CustomDateModal
         isOpen={isDateModalOpen}
-        onClose={handleCancelCustomDate}
+        onClose={() => setIsDateModalOpen(false)}
         onApply={handleApplyCustomDate}
-        initialStartDate={currentFilters.customStartDate}
-        initialEndDate={currentFilters.customEndDate}
       />
     </>
   );

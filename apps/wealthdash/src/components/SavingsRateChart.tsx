@@ -1,34 +1,47 @@
-const SavingsRateChart = () => {
+import { useApi } from '../hooks/useApi';
+import { analyticsApi } from '../services/api';
+
+interface SavingsRateChartProps {
+  refreshTrigger?: number;
+}
+
+const SavingsRateChart = ({ refreshTrigger = 0 }: SavingsRateChartProps) => {
+  const { data: savingsRate } = useApi(() => analyticsApi.savingsRate(6), [refreshTrigger]);
+
+  const formatMonth = (period: string) => {
+    const [, m] = period.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return months[parseInt(m) - 1] || m;
+  };
+
   return (
-    <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Rasio Tabungan</h2>
-          <div className="font-data-lg text-data-lg mt-1 text-primary">32.5%</div>
-        </div>
-        <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">trending_up</span>
+    <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-6 flex flex-col">
+      <h3 className="font-headline-md text-headline-md text-on-surface mb-6">Savings Rate</h3>
+
+      <div className="flex-1 flex flex-col gap-3">
+        {(savingsRate || []).map((point, idx) => {
+          const rate = parseFloat(point.rate);
+          const isPositive = rate >= 0;
+          return (
+            <div key={idx} className="flex items-center gap-3">
+              <span className="font-label-caps text-[11px] text-on-surface-variant w-10">{formatMonth(point.period)}</span>
+              <div className="flex-1 bg-surface-container-high rounded-full h-5 overflow-hidden relative">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isPositive ? 'bg-secondary' : 'bg-error'}`}
+                  style={{ width: `${Math.min(100, Math.abs(rate))}%` }}
+                ></div>
+                <span className={`absolute right-2 top-1/2 -translate-y-1/2 font-data-sm text-[11px] font-semibold ${isPositive ? 'text-on-surface' : 'text-error'}`}>
+                  {rate}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {(!savingsRate || savingsRate.length === 0) && (
+          <p className="text-on-surface-variant text-center py-8">Belum ada data</p>
+        )}
       </div>
-      <div className="h-[140px] w-full relative mt-4">
-        {/* Simple SVG representation of a line chart */}
-        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 40">
-          {/* Grid lines */}
-          <line className="text-outline-variant/50" stroke="currentColor" strokeWidth="0.2" x1="0" x2="100" y1="10" y2="10"></line>
-          <line className="text-outline-variant/50" stroke="currentColor" strokeWidth="0.2" x1="0" x2="100" y1="20" y2="20"></line>
-          <line className="text-outline-variant/50" stroke="currentColor" strokeWidth="0.2" x1="0" x2="100" y1="30" y2="30"></line>
-          {/* Data Line */}
-          <polyline className="text-secondary" fill="none" points="0,35 15,30 30,25 45,28 60,15 75,18 90,8 100,5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></polyline>
-          {/* Data Points */}
-          <circle className="text-secondary" cx="60" cy="15" fill="currentColor" r="1.5"></circle>
-          <circle className="text-secondary" cx="90" cy="8" fill="currentColor" r="1.5"></circle>
-        </svg>
-        <div className="flex justify-between font-data-sm text-data-sm text-on-surface-variant mt-2 px-1">
-          <span>Q1</span>
-          <span>Q2</span>
-          <span>Q3</span>
-          <span>Q4</span>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 };
 

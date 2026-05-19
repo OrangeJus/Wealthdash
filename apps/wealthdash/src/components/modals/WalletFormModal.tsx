@@ -6,9 +6,11 @@ interface WalletFormModalProps {
   onClose: () => void;
   editMode?: boolean;
   initialData?: any;
+  onSave?: (data: any) => void;
+  onDelete?: () => void;
 }
 
-const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: WalletFormModalProps) => {
+const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData, onSave, onDelete }: WalletFormModalProps) => {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('account_balance_wallet');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -28,9 +30,9 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
     if (editMode && initialData) {
       setName(initialData.name || '');
       setIcon(initialData.icon || 'account_balance_wallet');
-      setLogoUrl(initialData.logoUrl || null);
+      setLogoUrl(initialData.logo_path || null);
       setCluster(initialData.cluster || 'liquid');
-      setBalance(initialData.balance || '');
+      setBalance(String(initialData.balance || ''));
     } else {
       setName('');
       setIcon('account_balance_wallet');
@@ -49,6 +51,20 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      alert('Nama dompet harus diisi');
+      return;
+    }
+    onSave?.({
+      name: name.trim(),
+      icon,
+      logo_path: logoUrl,
+      cluster,
+      balance: editMode ? undefined : Number(balance) || 0,
+    });
   };
 
   return (
@@ -159,14 +175,17 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
 
         {/* Action Buttons */}
         <div className="flex gap-3 mt-4">
-          {editMode && (
-            <button className="flex-1 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 border border-error text-error hover:bg-error/10 transition-colors">
+          {editMode && onDelete && (
+            <button 
+              onClick={onDelete}
+              className="flex-1 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 border border-error text-error hover:bg-error/10 transition-colors"
+            >
               <span className="material-symbols-outlined text-[18px]">delete</span>
               Hapus
             </button>
           )}
           <button 
-            onClick={onClose}
+            onClick={handleSave}
             className={`py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm ${editMode ? 'flex-[2]' : 'w-full'}`}
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

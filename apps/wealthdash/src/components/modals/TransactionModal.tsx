@@ -1,5 +1,7 @@
-import { useState, useEffect as import_react_useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
+import { useApi } from '../../hooks/useApi';
+import { walletsApi, categoriesApi, transactionsApi } from '../../services/api';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -7,49 +9,102 @@ interface TransactionModalProps {
   defaultTab?: 'income' | 'expense' | 'transfer';
   editMode?: boolean;
   initialData?: any;
+  onSaved?: () => void;
 }
 
-const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = false, initialData }: TransactionModalProps) => {
+const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = false, initialData, onSaved }: TransactionModalProps) => {
   const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'transfer'>(defaultTab);
+  const [saving, setSaving] = useState(false);
 
   // Form State
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [wallet, setWallet] = useState('');
-  const [toWallet, setToWallet] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [walletId, setWalletId] = useState('');
+  const [toWalletId, setToWalletId] = useState('');
   const [note, setNote] = useState('');
 
+  // Fetch wallets and categories from API
+  const { data: walletsData } = useApi(() => walletsApi.list(), [isOpen]);
+  const { data: categoriesData } = useApi(() => categoriesApi.list(), [isOpen]);
+
+  const wallets = walletsData?.wallets || [];
+  const expenseCategories = categoriesData?.expense || [];
+  const incomeCategories = categoriesData?.income || [];
+
   // Effect to populate data when editing
-  import_react_useEffect(() => {
+  useEffect(() => {
     if (editMode && initialData && isOpen) {
       setActiveTab(initialData.type || 'expense');
-      // For dummy data, convert '24 Okt 2023' or similar to YYYY-MM-DD roughly. In real app, date is YYYY-MM-DD
-      setDate(new Date().toISOString().split('T')[0]); 
-      setAmount(initialData.amount ? initialData.amount.replace(/[^0-9]/g, '') : '');
-      setCategory(initialData.category ? initialData.category.toLowerCase() : '');
-      setWallet('bca'); // Mock
-      setNote(initialData.desc || '');
+      setDate(initialData.date || new Date().toISOString().split('T')[0]);
+      setAmount(String(initialData.amount || ''));
+      setCategoryId(initialData.category_id || '');
+      setWalletId(initialData.wallet_id || '');
+      setToWalletId(initialData.to_wallet_id || '');
+      setNote(initialData.note || '');
     } else if (isOpen) {
       setActiveTab(defaultTab);
       setDate(new Date().toISOString().split('T')[0]);
       setAmount('');
-      setCategory('');
-      setWallet('');
-      setToWallet('');
+      setCategoryId('');
+      setWalletId('');
+      setToWalletId('');
       setNote('');
     }
   }, [editMode, initialData, isOpen, defaultTab]);
 
-  // Reset state when closing
   const handleClose = () => {
     setAmount('');
-    setCategory('');
-    setWallet('');
-    setToWallet('');
+    setCategoryId('');
+    setWalletId('');
+    setToWalletId('');
     setNote('');
     onClose();
   };
+
+  const handleSave = async () => {
+    if (!amount || !walletId) {
+      alert('Nominal dan Dompet harus diisi');
+      return;
+    }
+    if (activeTab !== 'transfer' && !categoryId) {
+      alert('Kategori harus dipilih');
+      return;
+    }
+    if (activeTab === 'transfer' && !toWalletId) {
+      alert('Dompet tujuan harus dipilih');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const data = {
+        date,
+        type: activeTab,
+        amount: Number(amount),
+        category_id: activeTab !== 'transfer' ? categoryId : null,
+        wallet_id: walletId,
+        to_wallet_id: activeTab === 'transfer' ? toWalletId : null,
+        note: note || undefined,
+      };
+
+      if (editMode && initialData?.id) {
+        await transactionsApi.update(initialData.id, data);
+      } else {
+        await transactionsApi.create(data);
+      }
+
+      handleClose();
+      onSaved?.();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Find selected wallet balance for helper text
+  const selectedWallet = wallets.find(w => w.id === walletId);
 
   return (
     <ModalOverlay isOpen={isOpen} onClose={handleClose} title={editMode ? "Edit Transaksi" : "Tambah Transaksi"} width="max-w-lg">
@@ -111,25 +166,14 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
           <div>
             <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Kategori</label>
             <select 
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none"
             >
               <option value="" disabled>Pilih Kategori</option>
-              {activeTab === 'expense' ? (
-                <>
-                  <option value="makanan">Makanan</option>
-                  <option value="transport">Transport</option>
-                  <option value="belanja">Belanja</option>
-                  <option value="hiburan">Hiburan</option>
-                </>
-              ) : (
-                <>
-                  <option value="gaji">Gaji</option>
-                  <option value="freelance">Freelance</option>
-                  <option value="bonus">Bonus</option>
-                </>
-              )}
+              {(activeTab === 'expense' ? expenseCategories : incomeCategories).map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
             </select>
           </div>
         )}
@@ -140,21 +184,20 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
             {activeTab === 'income' ? 'Masuk ke Dompet' : activeTab === 'expense' ? 'Bayar dari Dompet' : 'Dari Dompet'}
           </label>
           <select 
-            value={wallet}
-            onChange={(e) => setWallet(e.target.value)}
+            value={walletId}
+            onChange={(e) => setWalletId(e.target.value)}
             className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none"
           >
             <option value="" disabled>Pilih Dompet</option>
-            <option value="gopay">GoPay</option>
-            <option value="ovo">OVO</option>
-            <option value="bca">BCA</option>
-            <option value="cash">Cash</option>
+            {wallets.map(w => (
+              <option key={w.id} value={w.id}>{w.name} — Rp {w.balance.toLocaleString('id-ID')}</option>
+            ))}
           </select>
           
-          {activeTab === 'expense' && wallet === 'gopay' && (
+          {activeTab === 'expense' && selectedWallet && (
             <p className="mt-1.5 text-[13px] text-[#b45309] bg-[#fef3c7] p-2 rounded flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[14px]">warning</span>
-              Saldo GoPay saat ini: Rp 350.000
+              <span className="material-symbols-outlined text-[14px]">account_balance_wallet</span>
+              Saldo saat ini: Rp {selectedWallet.balance.toLocaleString('id-ID')}
             </p>
           )}
         </div>
@@ -164,15 +207,14 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
           <div>
             <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Ke Dompet</label>
             <select 
-              value={toWallet}
-              onChange={(e) => setToWallet(e.target.value)}
+              value={toWalletId}
+              onChange={(e) => setToWalletId(e.target.value)}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none"
             >
               <option value="" disabled>Pilih Dompet Tujuan</option>
-              <option value="gopay">GoPay</option>
-              <option value="ovo">OVO</option>
-              <option value="bca">BCA</option>
-              <option value="cash">Cash</option>
+              {wallets.filter(w => w.id !== walletId).map(w => (
+                <option key={w.id} value={w.id}>{w.name} — Rp {w.balance.toLocaleString('id-ID')}</option>
+              ))}
             </select>
             
             <p className="mt-2 text-[13px] text-on-surface-variant flex items-center gap-1.5 bg-surface-container-low p-2 rounded">
@@ -196,16 +238,17 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
 
         {/* Action Button */}
         <button 
-          className={`w-full py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 mt-4 transition-opacity hover:opacity-90 shadow-sm
+          className={`w-full py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 mt-4 transition-opacity hover:opacity-90 shadow-sm disabled:opacity-50
             ${activeTab === 'income' ? 'bg-[#166534] text-white' : 
               activeTab === 'expense' ? 'bg-[#991b1b] text-white' : 
               'bg-[#3730a3] text-white'
             }
           `}
-          onClick={handleClose}
+          onClick={handleSave}
+          disabled={saving}
         >
           <span className="material-symbols-outlined text-[18px]">save</span>
-          Simpan {activeTab === 'income' ? 'Pemasukan' : activeTab === 'expense' ? 'Pengeluaran' : 'Transfer'}
+          {saving ? 'Menyimpan...' : `Simpan ${activeTab === 'income' ? 'Pemasukan' : activeTab === 'expense' ? 'Pengeluaran' : 'Transfer'}`}
         </button>
 
       </div>
