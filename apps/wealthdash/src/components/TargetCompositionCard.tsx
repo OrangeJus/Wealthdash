@@ -1,15 +1,21 @@
 interface TargetCompositionCardProps {
   onTopUp?: () => void;
+  onEditRoutine?: () => void;
 }
 
-const TargetCompositionCard = ({ onTopUp }: TargetCompositionCardProps) => {
+const TargetCompositionCard = ({ onTopUp, onEditRoutine }: TargetCompositionCardProps) => {
   return (
     <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant p-6 flex flex-col justify-between">
       <div>
         <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase">Komposisi Target</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
           <div className="flex flex-col gap-1">
-            <span className="font-body-sm text-body-sm text-on-surface-variant">Target Rutin</span>
+            <div className="flex items-center gap-2">
+              <span className="font-body-sm text-body-sm text-on-surface-variant">Target Rutin</span>
+              <button onClick={onEditRoutine} className="text-on-surface-variant hover:text-secondary transition-colors" title="Ubah Target Rutin">
+                <span className="material-symbols-outlined text-[14px]">edit</span>
+              </button>
+            </div>
             <span className="font-data-md text-data-md text-on-surface">Rp 250.000</span>
           </div>
           <div className="flex flex-col gap-1">

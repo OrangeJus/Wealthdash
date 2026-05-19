@@ -6,9 +6,10 @@ import RecentTransactions from '../components/RecentTransactions';
 
 interface DashboardProps {
   onOpenTransaction: () => void;
+  onViewAllTransactions: () => void;
 }
 
-const Dashboard = ({ onOpenTransaction }: DashboardProps) => {
+const Dashboard = ({ onOpenTransaction, onViewAllTransactions }: DashboardProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop w-full max-w-container-max-width mx-auto">
       {/* Page Header (Desktop) */}
@@ -87,7 +88,7 @@ const Dashboard = ({ onOpenTransaction }: DashboardProps) => {
         <AssetAllocation />
 
         {/* ROW 4: Recent Transactions Table */}
-        <RecentTransactions />
+        <RecentTransactions onViewAll={onViewAllTransactions} />
       </div>
 
       {/* Bottom spacing for scroll */}

@@ -33,7 +33,7 @@ const TransactionFullTable = ({ onEdit, onDelete }: TransactionFullTableProps) =
           </thead>
           <tbody className="divide-y divide-surface-variant font-body-sm text-body-sm text-on-surface">
             {transactions.map((tx, idx) => (
-              <tr key={idx} className="hover:bg-surface-container-low/50 transition-colors h-[64px]">
+              <tr key={idx} className="hover:bg-surface-container-low/50 transition-colors h-[64px] group">
                 <td className="px-6 py-4 whitespace-nowrap font-data-sm text-data-sm text-on-surface-variant">{tx.date}</td>
                 <td className="px-6 py-4">
                   <div className={`w-8 h-8 rounded-full ${tx.iconBg} flex items-center justify-center ${tx.iconColor}`}>

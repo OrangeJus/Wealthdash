@@ -29,7 +29,7 @@ const OverviewCard: React.FC<OverviewCardProps> = ({
     <div className="col-span-1 md:col-span-4 bg-surface-container-lowest border border-surface-variant rounded-xl p-6 flex flex-col gap-4 transition-shadow hover:shadow-[0px_4px_12px_rgba(15,23,42,0.05)]">
       <div className="flex justify-between items-start">
         <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">{title}</span>
-        <div className={`${iconBgClass} p-2 rounded-lg ${iconTextClass}`}>
+        <div className={`${iconBgClass} w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconTextClass}`}>
           <span className="material-symbols-outlined">{icon}</span>
         </div>
       </div>

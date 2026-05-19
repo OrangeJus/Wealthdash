@@ -9,6 +9,8 @@ import Transaksi from './pages/Transaksi';
 import Dompet from './pages/Dompet';
 import Settings from './pages/Settings';
 import WalletDetail from './pages/WalletDetail';
+import Kategori from './pages/Kategori';
+import Anggaran from './pages/Anggaran';
 import TransactionModal from './components/modals/TransactionModal';
 
 function App() {
@@ -33,11 +35,13 @@ function App() {
       <main className="flex-1 flex flex-col min-w-0 md:ml-[280px] overflow-hidden bg-background">
         <MobileHeader onOpenTransaction={() => handleOpenTransaction()} />
         
-        {activeTab === 'Dashboard' && <Dashboard onOpenTransaction={() => handleOpenTransaction()} />}
+        {activeTab === 'Dashboard' && <Dashboard onOpenTransaction={() => handleOpenTransaction()} onViewAllTransactions={() => setActiveTab('Transaksi')} />}
         {activeTab === 'Analitik' && <Analytics />}
         {activeTab === 'Investasi' && <Investasi />}
+        {activeTab === 'Anggaran' && <Anggaran onOpenTransaction={() => handleOpenTransaction()} />}
         {activeTab === 'Tabungan' && <Tabungan />}
-        {activeTab === 'Transaksi' && <Transaksi onOpenTransaction={() => handleOpenTransaction()} onEditTransaction={handleOpenTransaction} />}
+        {activeTab === 'Transaksi' && <Transaksi onOpenTransaction={() => handleOpenTransaction()} onEditTransaction={handleOpenTransaction} onViewCategories={() => setActiveTab('Kategori')} />}
+        {activeTab === 'Kategori' && <Kategori onBack={() => setActiveTab('Transaksi')} />}
         {activeTab === 'Dompet' && <Dompet onSelectWallet={handleSelectWallet} />}
         {activeTab === 'WalletDetail' && selectedWalletId && (
           <WalletDetail 
@@ -49,7 +53,7 @@ function App() {
         )}
         {activeTab === 'Settings' && <Settings />}
         {/* Placeholder for other tabs */}
-        {activeTab !== 'Dashboard' && activeTab !== 'Analitik' && activeTab !== 'Investasi' && activeTab !== 'Tabungan' && activeTab !== 'Transaksi' && activeTab !== 'Dompet' && activeTab !== 'WalletDetail' && activeTab !== 'Settings' && (
+        {activeTab !== 'Dashboard' && activeTab !== 'Analitik' && activeTab !== 'Investasi' && activeTab !== 'Tabungan' && activeTab !== 'Transaksi' && activeTab !== 'Dompet' && activeTab !== 'WalletDetail' && activeTab !== 'Kategori' && activeTab !== 'Anggaran' && activeTab !== 'Settings' && (
           <div className="flex-1 flex items-center justify-center p-8 text-on-surface-variant">
             <p>Halaman {activeTab} sedang dalam pengembangan.</p>
           </div>

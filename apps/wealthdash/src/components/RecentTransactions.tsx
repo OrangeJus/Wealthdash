@@ -1,6 +1,8 @@
+interface RecentTransactionsProps {
+  onViewAll?: () => void;
+}
 
-
-const RecentTransactions = () => {
+const RecentTransactions = ({ onViewAll }: RecentTransactionsProps) => {
   const transactions = [
     { date: '24 Oct 2023', type: 'EXPENSE', category: 'Makanan', icon: 'restaurant', wallet: 'BCA Utama', desc: 'Makan siang di cafe', amount: '- Rp 150.000', amountClass: 'text-on-surface', typeClass: 'bg-[#fee2e2] text-[#991b1b]' },
     { date: '23 Oct 2023', type: 'INCOME', category: 'Gaji', icon: 'work', wallet: 'Mandiri Payroll', desc: 'Gaji Bulan Oktober', amount: '+ Rp 5.000.000', amountClass: 'text-secondary', typeClass: 'bg-[#dcfce7] text-[#166534]' },
@@ -13,7 +15,15 @@ const RecentTransactions = () => {
     <div className="col-span-1 md:col-span-12 bg-surface-container-lowest border border-surface-variant rounded-xl overflow-hidden flex flex-col">
       <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-lowest">
         <h3 className="font-headline-md text-headline-md text-on-surface">Recent Transactions</h3>
-        <a className="font-body-sm text-body-sm text-secondary hover:underline" href="#">View All</a>
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            onViewAll?.();
+          }}
+          className="font-body-sm text-body-sm text-secondary hover:underline cursor-pointer bg-transparent border-none p-0"
+        >
+          View All
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">

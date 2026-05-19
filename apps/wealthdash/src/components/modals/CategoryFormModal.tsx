@@ -1,42 +1,42 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
 
-interface WalletFormModalProps {
+interface CategoryFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   editMode?: boolean;
   initialData?: any;
 }
 
-const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: WalletFormModalProps) => {
+const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData }: CategoryFormModalProps) => {
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('account_balance_wallet');
+  const [type, setType] = useState('expense');
+  const [icon, setIcon] = useState('category');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [cluster, setCluster] = useState('liquid');
-  const [balance, setBalance] = useState('');
 
   // Icon options
   const icons = [
-    { id: 'account_balance_wallet', name: 'Wallet' },
-    { id: 'account_balance', name: 'Bank' },
-    { id: 'payments', name: 'Cash' },
-    { id: 'credit_card', name: 'Card' },
-    { id: 'show_chart', name: 'Invest' }
+    { id: 'restaurant', name: 'Makanan' },
+    { id: 'shopping_cart', name: 'Belanja' },
+    { id: 'home', name: 'Rumah' },
+    { id: 'directions_car', name: 'Transport' },
+    { id: 'health_and_safety', name: 'Kesehatan' },
+    { id: 'school', name: 'Pendidikan' },
+    { id: 'work', name: 'Pekerjaan' },
+    { id: 'category', name: 'Lainnya' }
   ];
 
   useEffect(() => {
-    if (editMode && initialData) {
+    if (editMode && initialData && isOpen) {
       setName(initialData.name || '');
-      setIcon(initialData.icon || 'account_balance_wallet');
+      setType(initialData.type || 'expense');
+      setIcon(initialData.icon || 'category');
       setLogoUrl(initialData.logoUrl || null);
-      setCluster(initialData.cluster || 'liquid');
-      setBalance(initialData.balance || '');
-    } else {
+    } else if (isOpen) {
       setName('');
-      setIcon('account_balance_wallet');
+      setType('expense');
+      setIcon('category');
       setLogoUrl(null);
-      setCluster('liquid');
-      setBalance('');
     }
   }, [editMode, initialData, isOpen]);
 
@@ -52,14 +52,33 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
   };
 
   return (
-    <ModalOverlay isOpen={isOpen} onClose={onClose} title={editMode ? "Edit Dompet" : "Tambah Dompet"} width="max-w-md">
+    <ModalOverlay isOpen={isOpen} onClose={onClose} title={editMode ? "Edit Kategori" : "Tambah Kategori"} width="max-w-md">
       <div className="flex flex-col gap-5">
+        {/* Type Field */}
+        <div>
+          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Tipe Kategori</label>
+          <div className="flex bg-surface-container-low rounded-lg p-1 border border-outline-variant/30">
+            <button
+              onClick={() => setType('expense')}
+              className={`flex-1 py-2 rounded-md font-label-caps text-[12px] font-semibold transition-colors ${type === 'expense' ? 'bg-[#fee2e2] text-[#991b1b] shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}
+            >
+              Pengeluaran
+            </button>
+            <button
+              onClick={() => setType('income')}
+              className={`flex-1 py-2 rounded-md font-label-caps text-[12px] font-semibold transition-colors ${type === 'income' ? 'bg-[#dcfce7] text-[#166534] shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}
+            >
+              Pemasukan
+            </button>
+          </div>
+        </div>
+
         {/* Name Field */}
         <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Nama Dompet</label>
+          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Nama Kategori</label>
           <input 
             type="text" 
-            placeholder="Contoh: GoPay, BCA, Dompet Fisik"
+            placeholder="Contoh: Makanan, Gaji, dll"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
@@ -80,7 +99,7 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
             )}
           </label>
           
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {logoUrl ? (
               <div className="w-16 h-16 rounded-xl border-2 border-secondary overflow-hidden shrink-0 shadow-sm relative group">
                 <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
@@ -117,46 +136,6 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
           <p className="mt-2 text-[12px] text-on-surface-variant opacity-70">Pilih ikon default atau upload logo kustom (JPG/PNG).</p>
         </div>
 
-        {/* Cluster Field */}
-        <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Klaster Aset</label>
-          <select 
-            value={cluster}
-            onChange={(e) => setCluster(e.target.value)}
-            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none"
-          >
-            <option value="liquid">💵 Liquid Cash (Untuk jajan)</option>
-            <option value="savings">🏦 Savings (Tabungan)</option>
-            <option value="investment">📊 Investment (Investasi)</option>
-          </select>
-          
-          {!editMode && (
-            <p className="mt-2 text-[13px] text-on-surface-variant flex gap-1.5 bg-surface-container-low p-2 rounded">
-              <span className="material-symbols-outlined text-[14px]">info</span>
-              Klaster menentukan posisi dompet di Donut Chart alokasi aset.
-            </p>
-          )}
-        </div>
-
-        {/* Balance Field - Only shown when adding a new wallet */}
-        {!editMode && (
-          <div>
-            <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">
-              Saldo Awal
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
-              <input 
-                type="number" 
-                placeholder="0"
-                value={balance}
-                onChange={(e) => setBalance(e.target.value)}
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
-              />
-            </div>
-          </div>
-        )}
-
         {/* Action Buttons */}
         <div className="flex gap-3 mt-4">
           {editMode && (
@@ -167,10 +146,11 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
           )}
           <button 
             onClick={onClose}
-            className={`py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm ${editMode ? 'flex-[2]' : 'w-full'}`}
+            disabled={!name}
+            className={`py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${editMode ? 'flex-[2]' : 'w-full'}`}
           >
             <span className="material-symbols-outlined text-[18px]">save</span>
-            Simpan Dompet
+            Simpan Kategori
           </button>
         </div>
 
@@ -179,4 +159,4 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData }: Wal
   );
 };
 
-export default WalletFormModal;
+export default CategoryFormModal;

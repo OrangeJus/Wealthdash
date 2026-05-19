@@ -7,8 +7,9 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const navItems = [
     { id: 'Dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'Transaksi', icon: 'receipt_long', label: 'Transaksi' },
-    { id: 'Dompet', icon: 'account_balance_wallet', label: 'Dompet' },
+    { id: 'Anggaran', icon: 'event_repeat', label: 'Anggaran' },
     { id: 'Tabungan', icon: 'savings', label: 'Tabungan' },
+    { id: 'Dompet', icon: 'account_balance_wallet', label: 'Dompet' },
     { id: 'Investasi', icon: 'monitoring', label: 'Investasi' },
     { id: 'Analitik', icon: 'analytics', label: 'Analitik' }
   ];

@@ -16,7 +16,7 @@ const WalletCard = ({ icon, name, typeBadge, amount, iconBgClass, iconTextClass,
   return (
     <div 
       onClick={onClick}
-      className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-6 hover:shadow-[0px_4px_12px_rgba(15,23,42,0.05)] transition-shadow group flex flex-col gap-6 ${onClick ? 'cursor-pointer hover:border-outline' : ''}`}
+      className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-[0px_4px_12px_rgba(15,23,42,0.05)] transition-shadow group flex flex-col justify-between aspect-square ${onClick ? 'cursor-pointer hover:border-outline' : ''}`}
     >
       <div className="flex justify-between items-start">
         {logoUrl ? (
@@ -39,11 +39,11 @@ const WalletCard = ({ icon, name, typeBadge, amount, iconBgClass, iconTextClass,
         </button>
       </div>
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-col items-start gap-1 mb-2">
+          <span className={`${badgeBgClass} ${badgeTextClass} font-label-caps text-[10px] px-2 py-0.5 rounded-md`}>{typeBadge}</span>
           <h4 className="font-body-md text-body-md font-semibold text-on-surface">{name}</h4>
-          <span className={`${badgeBgClass} ${badgeTextClass} font-label-caps text-label-caps px-2 py-1 rounded-md text-[10px]`}>{typeBadge}</span>
         </div>
-        <p className="font-data-lg text-data-lg text-on-surface text-right mt-4">{amount}</p>
+        <p className="font-data-md text-data-md text-on-surface text-left mt-2 font-bold">{amount}</p>
       </div>
     </div>
   );

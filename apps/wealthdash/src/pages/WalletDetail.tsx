@@ -67,7 +67,7 @@ const WalletDetail = ({ walletId, onBack, onOpenTransaction, onEditTransaction }
           
           <button 
             onClick={onOpenTransaction}
-            className="flex items-center gap-2 bg-[#3B82F6] hover:bg-secondary-container transition-colors text-on-primary font-body-sm text-body-sm px-5 py-2.5 rounded-lg font-semibold shadow-sm w-full md:w-auto justify-center"
+            className="flex items-center gap-2 bg-secondary hover:bg-secondary-container transition-colors text-on-secondary hover:text-on-secondary-container font-label-caps text-label-caps px-5 py-2.5 rounded-lg font-semibold shadow-sm w-full md:w-auto justify-center"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Tambah Transaksi
