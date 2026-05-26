@@ -3,3 +3,12 @@ dist
 .env
 .env.*
 .DS_Store
+
+# SQLite temporary & database files
+*.db-shm
+*.db-wal
+*.db
+
+# Temporary symlinks & build assets
+vite
+wealthdash@0.0.0
