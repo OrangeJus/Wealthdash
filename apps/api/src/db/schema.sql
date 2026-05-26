@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS categories (
     type        TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     icon        TEXT NOT NULL DEFAULT 'category',
     sort_order  INTEGER NOT NULL DEFAULT 0,
+    logo_path   TEXT,
+    budget      INTEGER,
     created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 

@@ -59,7 +59,7 @@ router.get('/rdn-balance', (_req, res) => {
 router.post('/buy', (req, res) => {
   const { code, name, price, lots } = req.body;
 
-  if (!code || !price || !lots) {
+  if (!code || price === undefined || price === null || price === '' || lots === undefined || lots === null || lots === '') {
     res.status(400).json(errorResponse('code, price, and lots are required'));
     return;
   }
@@ -101,7 +101,7 @@ router.post('/buy', (req, res) => {
     `).run(tradeId, holdingId, code.toUpperCase(), numPrice, numLots, totalAmount, rdnWallet.id);
 
     // Deduct from RDN wallet
-    db.prepare('UPDATE wallets SET balance = balance - ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(totalAmount, rdnWallet.id);
 
     return { holdingId, tradeId };
@@ -117,7 +117,7 @@ router.post('/buy', (req, res) => {
 router.post('/sell', (req, res) => {
   const { holding_id, sell_price } = req.body;
 
-  if (!holding_id || !sell_price) {
+  if (!holding_id || sell_price === undefined || sell_price === null || sell_price === '') {
     res.status(400).json(errorResponse('holding_id and sell_price are required'));
     return;
   }
@@ -156,7 +156,7 @@ router.post('/sell', (req, res) => {
     db.prepare('UPDATE stock_holdings SET lots = 0 WHERE id = ?').run(holding_id);
 
     // Credit RDN wallet
-    db.prepare('UPDATE wallets SET balance = balance + ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(hasilJual, rdnWallet.id);
 
     return { tradeId, realizedPnl };
@@ -179,7 +179,7 @@ router.post('/sell', (req, res) => {
 router.patch('/holdings/:id/price', (req, res) => {
   const { current_price } = req.body;
 
-  if (!current_price) {
+  if (current_price === undefined || current_price === null || current_price === '') {
     res.status(400).json(errorResponse('current_price is required'));
     return;
   }
@@ -201,7 +201,7 @@ router.patch('/holdings/:id/price', (req, res) => {
 router.post('/rdn/topup', (req, res) => {
   const { from_wallet_id, amount } = req.body;
 
-  if (!from_wallet_id || !amount) {
+  if (!from_wallet_id || amount === undefined || amount === null || amount === '') {
     res.status(400).json(errorResponse('from_wallet_id and amount are required'));
     return;
   }
@@ -238,9 +238,9 @@ router.post('/rdn/topup', (req, res) => {
     `).run(txId, numAmount, from_wallet_id, rdnWallet.id);
 
     // Update balances
-    db.prepare('UPDATE wallets SET balance = balance - ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(numAmount, from_wallet_id);
-    db.prepare('UPDATE wallets SET balance = balance + ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(numAmount, rdnWallet.id);
   });
 
@@ -252,7 +252,7 @@ router.post('/rdn/topup', (req, res) => {
 router.post('/rdn/withdraw', (req, res) => {
   const { to_wallet_id, amount } = req.body;
 
-  if (!to_wallet_id || !amount) {
+  if (!to_wallet_id || amount === undefined || amount === null || amount === '') {
     res.status(400).json(errorResponse('to_wallet_id and amount are required'));
     return;
   }
@@ -287,9 +287,9 @@ router.post('/rdn/withdraw', (req, res) => {
       VALUES (?, date('now', 'localtime'), 'transfer', ?, ?, ?, 'Withdraw RDN')
     `).run(txId, numAmount, rdnWallet.id, to_wallet_id);
 
-    db.prepare('UPDATE wallets SET balance = balance - ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(numAmount, rdnWallet.id);
-    db.prepare('UPDATE wallets SET balance = balance + ?, updated_at = datetime("now", "localtime") WHERE id = ?')
+    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
       .run(numAmount, to_wallet_id);
   });
 

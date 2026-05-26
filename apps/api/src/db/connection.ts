@@ -9,7 +9,8 @@ const __dirname = dirname(__filename);
 
 // Database file lives in apps/api/data/
 const DATA_DIR = join(__dirname, '..', '..', 'data');
-const DB_PATH = join(DATA_DIR, 'wealthdash.db');
+const DB_NAME = process.env.DB_NAME || 'wealthdash.db';
+const DB_PATH = join(DATA_DIR, DB_NAME);
 
 // Ensure data directory exists
 if (!existsSync(DATA_DIR)) {
