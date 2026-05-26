@@ -106,6 +106,7 @@ export interface TopExpenseItem {
   budget?: number;
   total: number;
   count: number;
+  logo_path?: string | null;
 }
 
 export interface AssetAllocationItem {

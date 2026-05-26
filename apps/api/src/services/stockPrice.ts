@@ -12,7 +12,7 @@ export async function fetchStockPrice(code: string): Promise<number | null> {
     // IDX stocks use .JK suffix on Yahoo Finance
     const symbol = `${code.toUpperCase()}.JK`;
     
-    const result = await yahooFinance.quote(symbol);
+    const result = await yahooFinance.quote(symbol) as any;
     
     if (result && result.regularMarketPrice) {
       return Math.round(result.regularMarketPrice);

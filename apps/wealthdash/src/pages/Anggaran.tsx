@@ -1,26 +1,49 @@
 import { useState } from 'react';
 import { useApi, formatRp } from '../hooks/useApi';
-import { budgetsApi } from '../services/api';
+import { budgetsApi, walletsApi, settingsApi } from '../services/api';
 import type { Budget } from '../types';
 import AnggaranFormModal from '../components/modals/AnggaranFormModal';
+import WalletPickerModal from '../components/modals/WalletPickerModal';
 
 interface AnggaranProps {
   onOpenTransaction: () => void;
 }
 
-const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
+const Anggaran = ({ onOpenTransaction: _onOpenTransaction }: AnggaranProps) => {
   const { data: budgetsData, refetch } = useApi(() => budgetsApi.list(), []);
+  const { data: walletsData } = useApi(() => walletsApi.list(), []);
+  const { data: settingsData } = useApi(() => settingsApi.get(), []);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'bill' | 'wishlist'>('bill');
+  const [selectedItemForWallet, setSelectedItemForWallet] = useState<Budget | null>(null);
+  const [isWalletPickerOpen, setIsWalletPickerOpen] = useState(false);
 
   const handleOpenForm = (mode: 'bill' | 'wishlist') => {
     setFormMode(mode);
     setIsFormOpen(true);
   };
 
-  const toggleItem = async (id: string) => {
+  const handleToggleStatus = async (item: Budget) => {
+    if (!item.is_done) {
+      // If unchecked (will check) → open wallet picker
+      setSelectedItemForWallet(item);
+      setIsWalletPickerOpen(true);
+    } else {
+      // If checked (will uncheck) → directly toggle (refund)
+      try {
+        await budgetsApi.toggle(item.id);
+        refetch();
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const handleConfirmPayment = async (walletId: string) => {
+    if (!selectedItemForWallet) return;
     try {
-      await budgetsApi.toggle(id);
+      await budgetsApi.toggle(selectedItemForWallet.id, walletId);
       refetch();
     } catch (err: any) {
       alert(err.message);
@@ -47,6 +70,17 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
     }
   };
 
+  const formatPeriodLabel = (periodStr?: string) => {
+    if (!periodStr) return '';
+    const [year, month] = periodStr.split('-');
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const monthIdx = parseInt(month, 10) - 1;
+    return `${monthNames[monthIdx] || ''} ${year}`;
+  };
+
   const bills = budgetsData?.bills || [];
   const wishlist = budgetsData?.wishlist || [];
   const unpaidBills = bills.filter(b => !b.is_done);
@@ -59,7 +93,15 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">Anggaran & Rencana</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Kelola pengeluaran wajib bulanan dan wishlist belanja Anda.</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+            <p className="font-body-md text-body-md text-on-surface-variant">Kelola pengeluaran wajib bulanan dan wishlist belanja Anda.</p>
+            {budgetsData?.period && (
+              <div className="flex items-center gap-1.5 bg-[#f0f9ff] text-[#0284c7] px-2.5 py-1 rounded-full text-secondary font-semibold text-[13px] border border-[#bae6fd]">
+                <span className="material-symbols-outlined text-[16px] mt-0.5">calendar_month</span>
+                <span>{formatPeriodLabel(budgetsData.period)}</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex gap-3">
           <button 
@@ -95,7 +137,7 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
               <div key={bill.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-secondary/50 transition-colors">
                 <div className="flex items-start gap-3">
                   <button 
-                    onClick={() => toggleItem(bill.id)}
+                    onClick={() => handleToggleStatus(bill)}
                     className="mt-0.5 w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-transparent hover:border-secondary transition-colors shrink-0"
                   >
                     <span className="material-symbols-outlined text-[14px]">check</span>
@@ -136,7 +178,7 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
               {paidBills.map(bill => (
                 <div key={bill.id} className="bg-surface-container-lowest/50 border border-outline-variant/50 rounded-xl p-3 flex items-center gap-3 opacity-70">
                   <button 
-                    onClick={() => toggleItem(bill.id)}
+                    onClick={() => handleToggleStatus(bill)}
                     className="w-5 h-5 rounded-md bg-primary text-on-primary flex items-center justify-center shrink-0"
                   >
                     <span className="material-symbols-outlined text-[14px]">check</span>
@@ -166,7 +208,7 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
               <div key={item.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col gap-3 hover:border-[#f59e0b]/50 transition-colors group">
                 <div className="flex items-start gap-3">
                   <button 
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => handleToggleStatus(item)}
                     className="mt-0.5 w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-transparent hover:border-[#f59e0b] transition-colors shrink-0"
                   >
                     <span className="material-symbols-outlined text-[14px]">check</span>
@@ -198,7 +240,7 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
               {boughtWishlist.map(item => (
                 <div key={item.id} className="bg-surface-container-lowest/50 border border-outline-variant/50 rounded-xl p-3 flex items-center gap-3 opacity-60">
                   <button 
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => handleToggleStatus(item)}
                     className="w-5 h-5 rounded-md bg-[#f59e0b] text-white flex items-center justify-center shrink-0"
                   >
                     <span className="material-symbols-outlined text-[14px]">check</span>
@@ -219,6 +261,14 @@ const Anggaran = ({ onOpenTransaction }: AnggaranProps) => {
         onClose={() => setIsFormOpen(false)} 
         mode={formMode}
         onSave={handleSave}
+      />
+      <WalletPickerModal
+        isOpen={isWalletPickerOpen}
+        onClose={() => setIsWalletPickerOpen(false)}
+        budgetItem={selectedItemForWallet}
+        wallets={walletsData?.wallets || []}
+        defaultWalletId={settingsData?.default_wallet}
+        onConfirm={handleConfirmPayment}
       />
     </div>
   );

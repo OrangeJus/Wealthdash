@@ -126,7 +126,7 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-label-caps text-[12px] transition-colors ${
-                showAdvanced ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
+                showAdvanced ? 'bg-secondary/10 text-secondary' : 'text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">tune</span>
@@ -189,48 +189,68 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
               </button>
             </div>
 
-            {/* Custom Date Info & Save Filter */}
-            {filters.date_from && filters.date_to && (
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-primary/5 p-3 rounded-lg border border-primary/20">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[18px]">event</span>
-                  <span className="font-body-sm text-primary">
-                    {filters.date_from} hingga {filters.date_to}
-                  </span>
-                </div>
-                {!isSavingFilter ? (
-                  <button 
-                    onClick={() => setIsSavingFilter(true)}
-                    className="text-[12px] font-label-caps bg-primary text-on-primary px-3 py-1.5 rounded hover:bg-primary/90 transition-colors"
-                  >
-                    Simpan Filter Ini
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2 w-full md:w-auto">
-                    <input 
-                      type="text" 
-                      value={newFilterName}
-                      onChange={(e) => setNewFilterName(e.target.value)}
-                      placeholder="Nama Filter (mis. Liburan Bali)"
-                      className="flex-1 px-3 py-1.5 text-sm rounded border border-outline focus:border-primary outline-none"
-                      autoFocus
-                    />
-                    <button 
-                      onClick={handleSaveCurrentFilter}
-                      className="text-primary hover:text-primary/80 font-bold text-sm px-2"
-                    >
-                      Simpan
-                    </button>
-                    <button 
-                      onClick={() => setIsSavingFilter(false)}
-                      className="text-on-surface-variant hover:text-on-surface text-sm px-2"
-                    >
-                      Batal
-                    </button>
+            {/* Active Filter Info & Save Filter */}
+            {(() => {
+              const hasActiveFilters = !!(filters.type || filters.wallet_id || filters.category_id || filters.period || filters.date_from || filters.date_to);
+              if (!hasActiveFilters) return null;
+
+              // Build a summary of active filters
+              const dateLabel = filters.date_from
+                ? (filters.date_from === filters.date_to
+                    ? `Tanggal: ${filters.date_from}`
+                    : `${filters.date_from} hingga ${filters.date_to}`)
+                : null;
+
+              return (
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-secondary/5 p-3 rounded-lg border border-secondary/20">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {dateLabel && (
+                      <>
+                        <span className="material-symbols-outlined text-secondary text-[18px]">event</span>
+                        <span className="font-body-sm text-secondary">{dateLabel}</span>
+                      </>
+                    )}
+                    {!dateLabel && (
+                      <span className="font-body-sm text-secondary flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[18px]">filter_alt</span>
+                        Filter aktif
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                  {!isSavingFilter ? (
+                    <button 
+                      onClick={() => setIsSavingFilter(true)}
+                      className="flex items-center gap-1.5 font-label-caps text-label-caps bg-secondary text-on-secondary px-4 py-2 rounded-lg shadow-sm hover:bg-secondary/90 transition-colors"
+                    >
+                      Simpan Filter Ini
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <input 
+                        type="text" 
+                        value={newFilterName}
+                        onChange={(e) => setNewFilterName(e.target.value)}
+                        placeholder="Nama Filter (mis. Liburan Bali)"
+                        className="flex-1 px-3 py-2 text-sm rounded-lg border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-colors"
+                        autoFocus
+                      />
+                      <button 
+                        onClick={handleSaveCurrentFilter}
+                        className="text-secondary hover:text-secondary/80 font-semibold font-label-caps text-label-caps px-3 py-1 rounded-lg hover:bg-secondary/10 transition-colors"
+                      >
+                        Simpan
+                      </button>
+                      <button 
+                        onClick={() => setIsSavingFilter(false)}
+                        className="text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps px-3 py-1 rounded-lg hover:bg-surface-container transition-colors"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Saved Filters List */}
             {savedFilters.length > 0 && (
@@ -243,7 +263,7 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
                       onClick={() => applySavedFilter(sf)}
                       className="flex items-center gap-2 bg-surface-container hover:bg-surface-container-high transition-colors px-3 py-1.5 rounded-full cursor-pointer group border border-transparent hover:border-outline-variant/50"
                     >
-                      <span className="material-symbols-outlined text-[14px] text-primary">bookmark</span>
+                      <span className="material-symbols-outlined text-[14px] text-secondary">bookmark</span>
                       <span className="font-body-sm text-[13px] text-on-surface">{sf.name}</span>
                       <button 
                         onClick={(e) => handleDeleteSavedFilter(sf.id, e)}

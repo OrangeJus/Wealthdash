@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useApi, formatRp } from '../hooks/useApi';
 import { walletsApi, analyticsApi } from '../services/api';
 import type { Wallet } from '../types';
-import WalletSection from '../components/WalletSection';
 import WalletCard from '../components/WalletCard';
 import WalletFormModal from '../components/modals/WalletFormModal';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -57,7 +56,6 @@ const Dompet = ({ onSelectWallet }: DompetProps) => {
   const totalBalance = walletsData?.totalBalance || 0;
 
   // Compute change from last month (simplified — using totals)
-  const clusterColors: Record<string, string> = { liquid: 'bg-secondary', savings: 'bg-tertiary', investment: 'bg-primary' };
   const iconBgMap: Record<string, string> = { liquid: 'bg-secondary-fixed', savings: 'bg-tertiary-fixed', investment: 'bg-primary-fixed' };
   const iconTextMap: Record<string, string> = { liquid: 'text-on-secondary-fixed', savings: 'text-on-tertiary-fixed', investment: 'text-on-primary-fixed' };
   const badgeBgMap: Record<string, string> = { liquid: 'bg-surface-variant', savings: 'bg-tertiary-fixed', investment: 'bg-primary-fixed' };

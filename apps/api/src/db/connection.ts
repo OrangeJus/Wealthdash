@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import Database, { Database as BetterSqliteDatabase } from 'better-sqlite3';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,7 +17,7 @@ if (!existsSync(DATA_DIR)) {
 }
 
 // Create singleton connection
-const db = new Database(DB_PATH);
+const db: BetterSqliteDatabase = new Database(DB_PATH);
 
 // Enable WAL mode and foreign keys for performance and integrity
 db.pragma('journal_mode = WAL');

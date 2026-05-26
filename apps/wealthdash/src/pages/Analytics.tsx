@@ -1,5 +1,3 @@
-import { useApi, formatRp } from '../hooks/useApi';
-import { analyticsApi } from '../services/api';
 import IncomeExpenseChart from '../components/IncomeExpenseChart';
 import TopExpenses from '../components/TopExpenses';
 import SavingsRateChart from '../components/SavingsRateChart';

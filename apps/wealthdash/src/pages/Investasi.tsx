@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApi, formatRp } from '../hooks/useApi';
+import { useApi } from '../hooks/useApi';
 import { investmentsApi, walletsApi } from '../services/api';
 import RdnBalanceCard from '../components/RdnBalanceCard';
 import PortfolioSummaryCard from '../components/PortfolioSummaryCard';
@@ -142,7 +142,6 @@ const Investasi = () => {
         isOpen={isSellModalOpen} 
         onClose={() => setIsSellModalOpen(false)} 
         stockData={sellStockData}
-        rdnBalance={rdnData?.balance || 0}
         onSell={handleSell}
       />
       <RdnTransferModal 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useApi, formatRp } from '../hooks/useApi';
-import { transactionsApi, categoriesApi, walletsApi } from '../services/api';
-import type { Transaction, TransactionFilters } from '../types';
+import { useApi } from '../hooks/useApi';
+import { transactionsApi } from '../services/api';
+import type { TransactionFilters } from '../types';
 import TransactionFilterBar from '../components/TransactionFilterBar';
 import TransactionCharts from '../components/TransactionCharts';
 import TransactionFullTable from '../components/TransactionFullTable';

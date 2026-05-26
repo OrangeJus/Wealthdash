@@ -11,25 +11,22 @@ interface SavingsTopUpModalProps {
   onSave?: (data: any) => void;
 }
 
-const SavingsTopUpModal = ({ isOpen, onClose, targets = [], wallets = [], onSave }: SavingsTopUpModalProps) => {
-  const [targetId, setTargetId] = useState('');
+const SavingsTopUpModal = ({ isOpen, onClose, wallets = [], onSave }: SavingsTopUpModalProps) => {
   const [walletId, setWalletId] = useState('');
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setAmount('');
-      setTargetId(targets.length > 0 ? targets[0].id : '');
       setWalletId(wallets.length > 0 ? wallets[0].id : '');
     }
-  }, [isOpen, targets, wallets]);
+  }, [isOpen, wallets]);
 
   const selectedWallet = wallets.find(w => w.id === walletId);
 
   const handleSubmit = () => {
-    if (!targetId || !walletId || !amount) return;
+    if (!walletId || !amount) return;
     onSave?.({
-      target_id: targetId,
       wallet_id: walletId,
       amount: Number(amount),
       type: 'topup',
@@ -40,16 +37,6 @@ const SavingsTopUpModal = ({ isOpen, onClose, targets = [], wallets = [], onSave
   return (
     <ModalOverlay isOpen={isOpen} onClose={onClose} title="Top-Up Tabungan" width="max-w-md">
       <div className="flex flex-col gap-5">
-        
-        <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Target Tabungan</label>
-          <select value={targetId} onChange={(e) => setTargetId(e.target.value)}
-            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none">
-            {targets.map(t => (
-              <option key={t.id} value={t.id}>{t.name} ({formatRp(t.monthly_amount)}/bln)</option>
-            ))}
-          </select>
-        </div>
 
         <div>
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Dari Dompet</label>

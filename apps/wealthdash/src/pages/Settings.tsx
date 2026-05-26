@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { settingsApi, exportApi } from '../services/api';
+import { settingsApi, exportApi, walletsApi } from '../services/api';
 
 const Settings = () => {
   const { data: settings, refetch } = useApi(() => settingsApi.get(), []);
+  const { data: walletsData } = useApi(() => walletsApi.list(), []);
   const [expenseLimit, setExpenseLimit] = useState('');
   const [savingsTarget, setSavingsTarget] = useState('');
+  const [defaultWallet, setDefaultWallet] = useState('');
   const [initialized, setInitialized] = useState(false);
 
   // Sync API data to local state once loaded
   if (settings && !initialized) {
     setExpenseLimit(settings.expense_limit || '3000000');
     setSavingsTarget(settings.savings_target || '250000');
+    setDefaultWallet(settings.default_wallet || '');
     setInitialized(true);
   }
 
@@ -30,6 +33,16 @@ const Settings = () => {
       await settingsApi.update('savings_target', savingsTarget);
       refetch();
       alert('Target tabungan berhasil disimpan!');
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleSaveDefaultWallet = async () => {
+    try {
+      await settingsApi.update('default_wallet', defaultWallet);
+      refetch();
+      alert('Dompet default berhasil disimpan!');
     } catch (err: any) {
       alert(err.message);
     }
@@ -118,6 +131,37 @@ const Settings = () => {
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 opacity-80 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">info</span>
                 Berlaku tiap bulan, bisa diubah kapan saja
+              </p>
+            </div>
+
+            <div className="h-px bg-outline-variant/20 w-full"></div>
+
+            <div>
+              <label className="block font-body-sm text-body-sm text-on-surface-variant mb-2">Dompet Default Pembayaran</label>
+              <div className="flex gap-4 items-start">
+                <select 
+                  value={defaultWallet}
+                  onChange={(e) => setDefaultWallet(e.target.value)}
+                  className="flex-1 bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
+                >
+                  <option value="">-- Tanpa Dompet Default (Gunakan Fallback) --</option>
+                  {(walletsData?.wallets || []).map(w => (
+                    <option key={w.id} value={w.id}>
+                      {w.name} ({new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(w.balance)})
+                    </option>
+                  ))}
+                </select>
+                <button 
+                  onClick={handleSaveDefaultWallet}
+                  className="bg-secondary text-on-secondary px-6 py-3 rounded-lg font-label-caps text-label-caps shadow-sm hover:opacity-90 flex items-center gap-2 shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[18px]">save</span>
+                  Simpan
+                </button>
+              </div>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 opacity-80 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">info</span>
+                Dompet ini akan otomatis dipilih saat mencentang tagihan di halaman Anggaran
               </p>
             </div>
           </div>

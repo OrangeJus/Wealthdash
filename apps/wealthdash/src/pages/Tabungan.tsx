@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useApi, formatRp } from '../hooks/useApi';
+import { useApi } from '../hooks/useApi';
 import { savingsApi, walletsApi } from '../services/api';
 import TargetCompositionCard from '../components/TargetCompositionCard';
 import AchievementRingCard from '../components/AchievementRingCard';
 import RolloverHistoryTable from '../components/RolloverHistoryTable';
+import SavingsHistoryTable from '../components/SavingsHistoryTable';
 import SavingsTopUpModal from '../components/modals/SavingsTopUpModal';
 import SetorTabunganModal from '../components/modals/SetorTabunganModal';
 
@@ -13,13 +14,38 @@ const Tabungan = () => {
 
   const { data: progress, refetch: refetchProgress } = useApi(() => savingsApi.progress(), []);
   const { data: history, refetch: refetchHistory } = useApi(() => savingsApi.history(), []);
-  const { data: walletsData } = useApi(() => walletsApi.list(), []);
+  const { data: deposits, refetch: refetchDeposits } = useApi(() => savingsApi.listDeposits(), []);
+  const { data: walletsData, refetch: refetchWallets } = useApi(() => walletsApi.list(), []);
+
+  const refetchAll = () => {
+    refetchProgress();
+    refetchHistory();
+    refetchDeposits();
+    refetchWallets();
+  };
 
   const handleDeposit = async (data: any) => {
     try {
       await savingsApi.deposit(data);
-      refetchProgress();
-      refetchHistory();
+      refetchAll();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleEditDeposit = async (id: string, data: { amount?: number; wallet_id?: string }) => {
+    try {
+      await savingsApi.updateDeposit(id, data);
+      refetchAll();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteDeposit = async (id: string) => {
+    try {
+      await savingsApi.deleteDeposit(id);
+      refetchAll();
     } catch (err: any) {
       alert(err.message);
     }
@@ -46,7 +72,15 @@ const Tabungan = () => {
           />
         </div>
 
-        {/* Row 2: History Table */}
+        {/* Row 2: Deposit History */}
+        <SavingsHistoryTable
+          deposits={deposits || []}
+          wallets={walletsData?.wallets || []}
+          onEdit={handleEditDeposit}
+          onDelete={handleDeleteDeposit}
+        />
+
+        {/* Row 3: Rollover History Table */}
         <RolloverHistoryTable history={history || []} />
       </div>
 

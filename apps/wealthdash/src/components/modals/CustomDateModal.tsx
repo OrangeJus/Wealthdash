@@ -22,7 +22,8 @@ const CustomDateModal = ({ isOpen, onClose, onApply, initialStartDate, initialEn
 
   const handleApply = () => {
     if (startDate) {
-      onApply(startDate, endDate);
+      // If no end date specified, use start date (single-day filter)
+      onApply(startDate, endDate || startDate);
     }
   };
 

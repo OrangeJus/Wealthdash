@@ -127,8 +127,11 @@ export const budgetsApi = {
     request<Budget>('/budgets', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Budget>) =>
     request<Budget>(`/budgets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  toggle: (id: string) =>
-    request<Budget>(`/budgets/${id}/toggle`, { method: 'PATCH' }),
+  toggle: (id: string, wallet_id?: string) =>
+    request<Budget>(`/budgets/${id}/toggle`, {
+      method: 'PATCH',
+      body: wallet_id ? JSON.stringify({ wallet_id }) : undefined,
+    }),
   delete: (id: string) =>
     request<null>(`/budgets/${id}`, { method: 'DELETE' }),
 };
@@ -146,9 +149,14 @@ export const savingsApi = {
     const qs = period ? `?period=${period}` : '';
     return request<SavingsProgress>(`/savings/progress${qs}`);
   },
-  deposit: (data: { target_id: string; wallet_id: string; amount: number; type: 'routine' | 'topup'; period?: string }) =>
+  deposit: (data: { target_id?: string; wallet_id: string; amount: number; type: 'routine' | 'topup'; period?: string }) =>
     request<any>('/savings/deposit', { method: 'POST', body: JSON.stringify(data) }),
   history: () => request<SavingsHistoryRow[]>('/savings/history'),
+  listDeposits: () => request<any[]>('/savings/deposits'),
+  updateDeposit: (id: string, data: { amount?: number; wallet_id?: string }) =>
+    request<any>(`/savings/deposits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteDeposit: (id: string) =>
+    request<null>(`/savings/deposits/${id}`, { method: 'DELETE' }),
 };
 
 // ============================================================

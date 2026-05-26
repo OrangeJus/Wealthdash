@@ -7,49 +7,67 @@ interface TargetCompositionCardProps {
 }
 
 const TargetCompositionCard = ({ progress, onTopUp }: TargetCompositionCardProps) => {
+  const percentage = progress?.percentage || 0;
+  const totalDeposited = progress?.totalDeposited || 0;
+  const effectiveTarget = progress?.effectiveTarget || 0;
+
   return (
     <div className="lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-6 shadow-sm">
       <div className="flex justify-between items-center">
         <h3 className="font-headline-md text-headline-md text-on-surface">Komposisi Target</h3>
         <button
           onClick={onTopUp}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary rounded-lg font-label-caps text-label-caps shadow-sm hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary rounded-lg font-label-caps text-label-caps shadow-sm hover:bg-secondary/90 transition-colors"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           Top Up
         </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface-container-low rounded-xl p-4">
-          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Target Bulanan</p>
-          <p className="font-data-md text-data-md font-bold">{progress ? formatRp(progress.totalTarget) : '...'}</p>
+      {/* Metric Cards — 2x2 grid for better space usage */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-surface-container-low rounded-xl p-5">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-2">Target Bulanan</p>
+          <p className="font-data-lg text-[22px] font-bold text-on-surface">{progress ? formatRp(progress.totalTarget) : '...'}</p>
         </div>
-        <div className="bg-surface-container-low rounded-xl p-4">
-          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Rutin</p>
-          <p className="font-data-md text-data-md font-bold text-secondary">{progress ? formatRp(progress.routineDeposited) : '...'}</p>
+        <div className="bg-surface-container-low rounded-xl p-5">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-2">Rutin</p>
+          <p className="font-data-lg text-[22px] font-bold text-secondary">{progress ? formatRp(progress.routineDeposited) : '...'}</p>
         </div>
-        <div className="bg-surface-container-low rounded-xl p-4">
-          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Top-up</p>
-          <p className="font-data-md text-data-md font-bold text-tertiary">{progress ? formatRp(progress.topupDeposited) : '...'}</p>
+        <div className="bg-surface-container-low rounded-xl p-5">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-2">Top-up</p>
+          <p className="font-data-lg text-[22px] font-bold text-on-surface">{progress ? formatRp(progress.topupDeposited) : '...'}</p>
         </div>
-        <div className="bg-surface-container-low rounded-xl p-4">
-          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">Rollover</p>
-          <p className="font-data-md text-data-md font-bold text-error">{progress ? formatRp(progress.rollover) : '...'}</p>
+        <div className="bg-surface-container-low rounded-xl p-5">
+          <p className="font-label-caps text-[10px] text-on-surface-variant uppercase mb-2">Rollover</p>
+          <p className="font-data-lg text-[22px] font-bold text-error">{progress ? formatRp(progress.rollover) : '...'}</p>
         </div>
       </div>
 
-      {/* Targets list */}
-      <div className="flex flex-col gap-3">
-        {(progress?.targets || []).map((t) => (
-          <div key={t.id} className="flex items-center justify-between bg-surface-container rounded-lg px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-secondary">{t.icon}</span>
-              <span className="font-body-sm text-body-sm font-medium">{t.name}</span>
-            </div>
-            <span className="font-data-sm text-data-sm">{formatRp(t.monthly_amount)}/bln</span>
-          </div>
-        ))}
+      {/* Progress Bar */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <span className="font-label-caps text-[11px] text-on-surface-variant uppercase">Progres Bulan Ini</span>
+          <span className="font-data-sm text-data-sm font-semibold text-secondary">{percentage.toFixed(1)}%</span>
+        </div>
+        <div className="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{
+              width: `${Math.min(100, percentage)}%`,
+              backgroundColor: percentage >= 100 ? '#10b981' : '#0058be',
+            }}
+          />
+        </div>
+        <p className="font-body-sm text-[13px] text-on-surface-variant">
+          {progress
+            ? `${formatRp(totalDeposited)} dari ${formatRp(effectiveTarget)} — ${
+                percentage >= 100
+                  ? 'Target tercapai! 🎉'
+                  : `sisa ${formatRp(progress.remaining)}`
+              }`
+            : 'Memuat data...'}
+        </p>
       </div>
     </div>
   );

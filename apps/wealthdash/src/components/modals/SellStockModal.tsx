@@ -6,11 +6,10 @@ interface SellStockModalProps {
   isOpen: boolean;
   onClose: () => void;
   stockData?: any;
-  rdnBalance?: number;
   onSell?: (holdingId: string, sellPrice: number) => void;
 }
 
-const SellStockModal = ({ isOpen, onClose, stockData, rdnBalance = 0, onSell }: SellStockModalProps) => {
+const SellStockModal = ({ isOpen, onClose, stockData, onSell }: SellStockModalProps) => {
   const [sellPrice, setSellPrice] = useState('');
 
   useEffect(() => {

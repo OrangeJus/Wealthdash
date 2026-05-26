@@ -1,13 +1,13 @@
 import { useApi, formatRp } from '../hooks/useApi';
 import { analyticsApi } from '../services/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const CashFlowChart = () => {
   const { data: cashflow } = useApi(() => analyticsApi.cashflow(6), []);
 
   const formatMonth = (period: string) => {
     if (!period) return '';
-    const [y, m] = period.split('-');
+    const [, m] = period.split('-');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[parseInt(m) - 1] || m;
   };

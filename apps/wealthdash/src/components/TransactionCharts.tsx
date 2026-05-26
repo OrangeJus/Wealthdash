@@ -47,7 +47,7 @@ const TransactionCharts = ({ onViewCategories }: TransactionChartsProps) => {
         <div>
           <h3 className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-6">Pengeluaran Terbesar</h3>
           <div className="flex flex-col gap-5 mt-2">
-            {(topExpenses || []).slice(0, 3).map((cat, i) => {
+            {(topExpenses || []).slice(0, 3).map((cat) => {
               const maxAmount = topExpenses && topExpenses.length > 0 ? topExpenses[0].total : 1;
               let percentage = (cat.total / maxAmount) * 100;
               let barColor = '#3b82f6'; // default blue if no budget
@@ -66,7 +66,11 @@ const TransactionCharts = ({ onViewCategories }: TransactionChartsProps) => {
                 <div key={cat.category} className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-end font-body-sm text-[12px]">
                     <span className="flex items-center gap-1.5 font-semibold text-on-surface">
-                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{cat.icon || 'category'}</span> 
+                      {cat.logo_path ? (
+                        <img src={cat.logo_path} alt={cat.category} className="w-5 h-5 rounded object-cover" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{cat.icon || 'category'}</span>
+                      )}
                       {cat.category}
                     </span>
                     <div className="text-right flex flex-col">

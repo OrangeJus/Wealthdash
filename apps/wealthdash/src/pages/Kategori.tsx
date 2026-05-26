@@ -114,13 +114,13 @@ const Kategori = ({ onBack }: KategoriProps) => {
                   <div className="mt-4 pt-4 border-t border-outline-variant/30">
                     <div className="flex justify-between font-body-sm text-[11px] mb-2 font-medium text-on-surface-variant">
                       <span>{formatRp(spent)} terpakai</span>
-                      {cat.budget > 0
-                        ? <span className={`font-semibold ${percentage >= 90 ? 'text-[#ef4444]' : percentage >= 70 ? 'text-[#f59e0b]' : 'text-[#10b981]'}`}>{Math.round(percentage)}% dari {formatRp(cat.budget)}</span>
+                      {budget > 0
+                        ? <span className={`font-semibold ${percentage >= 90 ? 'text-[#ef4444]' : percentage >= 70 ? 'text-[#f59e0b]' : 'text-[#10b981]'}`}>{Math.round(percentage)}% dari {formatRp(budget)}</span>
                         : <span className="flex items-center gap-1 text-[10px]"><span className="material-symbols-outlined text-[14px]">all_inclusive</span> Bebas</span>
                       }
                     </div>
                     <div className="w-full bg-surface-container-high rounded-full h-2.5 overflow-hidden shadow-inner">
-                      {cat.budget > 0
+                      {budget > 0
                         ? <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(percentage, 100)}%`, backgroundColor: barColorClass }}></div>
                         : <div className="bg-gradient-to-r from-outline-variant/10 to-outline-variant/30 h-full rounded-full w-full"></div>
                       }

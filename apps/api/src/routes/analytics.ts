@@ -89,6 +89,7 @@ router.get('/top-expenses', (req, res) => {
     SELECT 
       c.name as category,
       c.icon,
+      c.logo_path,
       c.budget,
       SUM(t.amount) as total,
       COUNT(*) as count

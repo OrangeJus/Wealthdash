@@ -11,25 +11,22 @@ interface SetorTabunganModalProps {
   onSave?: (data: any) => void;
 }
 
-const SetorTabunganModal = ({ isOpen, onClose, targets = [], wallets = [], onSave }: SetorTabunganModalProps) => {
-  const [targetId, setTargetId] = useState('');
+const SetorTabunganModal = ({ isOpen, onClose, wallets = [], onSave }: SetorTabunganModalProps) => {
   const [fromWalletId, setFromWalletId] = useState('');
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setAmount('');
-      setTargetId(targets.length > 0 ? targets[0].id : '');
       setFromWalletId(wallets.length > 0 ? wallets[0].id : '');
     }
-  }, [isOpen, targets, wallets]);
+  }, [isOpen, wallets]);
 
   const selectedWallet = wallets.find(w => w.id === fromWalletId);
 
   const handleSubmit = () => {
-    if (!targetId || !fromWalletId || !amount) return;
+    if (!fromWalletId || !amount) return;
     onSave?.({
-      target_id: targetId,
       wallet_id: fromWalletId,
       amount: Number(amount),
       type: 'routine',
@@ -40,16 +37,6 @@ const SetorTabunganModal = ({ isOpen, onClose, targets = [], wallets = [], onSav
   return (
     <ModalOverlay isOpen={isOpen} onClose={onClose} title="Setor ke Tabungan" width="max-w-md">
       <div className="flex flex-col gap-5">
-        
-        <div>
-          <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Target Tabungan</label>
-          <select value={targetId} onChange={(e) => setTargetId(e.target.value)}
-            className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md appearance-none">
-            {targets.map(t => (
-              <option key={t.id} value={t.id}>{t.name} ({formatRp(t.monthly_amount)}/bln)</option>
-            ))}
-          </select>
-        </div>
 
         <div>
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Dari Dompet</label>
