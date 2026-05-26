@@ -173,7 +173,7 @@ router.post('/', (req, res) => {
 
   const parsedAmount = safeInt(amount);
   if ((type === 'transfer' || type === 'expense') && wallet.balance < parsedAmount) {
-    res.status(400).json(errorResponse(`Saldo tidak mencukupi untuk ${type === 'transfer' ? 'transfer' : 'pengeluaran'} ini`));
+    res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
     return;
   }
 
@@ -247,7 +247,7 @@ router.put('/:id', (req, res) => {
     }
 
     if (availableBalance < newAmount) {
-      res.status(400).json(errorResponse(`Saldo tidak mencukupi untuk update ${newType === 'transfer' ? 'transfer' : 'pengeluaran'} ini`));
+      res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
       return;
     }
   }

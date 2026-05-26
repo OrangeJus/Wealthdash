@@ -66,6 +66,10 @@ router.post('/buy', (req, res) => {
 
   const numPrice = safeInt(price);
   const numLots = safeInt(lots);
+  if (numPrice <= 0 || numLots <= 0) {
+    res.status(400).json(errorResponse('Harga dan jumlah lot harus lebih besar dari 0'));
+    return;
+  }
   const shares = numLots * 100;
   const totalAmount = numPrice * shares;
 
@@ -77,7 +81,7 @@ router.post('/buy', (req, res) => {
   }
 
   if (rdnWallet.balance < totalAmount) {
-    res.status(400).json(errorResponse(`Insufficient RDN balance. Need Rp ${totalAmount.toLocaleString()} but only have Rp ${rdnWallet.balance.toLocaleString()}`));
+    res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
     return;
   }
 
@@ -125,6 +129,10 @@ router.post('/sell', (req, res) => {
   }
 
   const numSellPrice = safeInt(sell_price);
+  if (numSellPrice <= 0) {
+    res.status(400).json(errorResponse('Harga jual harus lebih besar dari 0'));
+    return;
+  }
   const shares = holding.lots * 100;
   const hasilJual = numSellPrice * shares;
   const totalModal = holding.buy_price * shares;
@@ -211,6 +219,15 @@ router.post('/rdn/topup', (req, res) => {
   }
 
   const numAmount = safeInt(amount);
+  if (numAmount <= 0) {
+    res.status(400).json(errorResponse('Nominal top-up harus lebih besar dari 0'));
+    return;
+  }
+
+  if (fromWallet.balance < numAmount) {
+    res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
+    return;
+  }
 
   const topupTx = db.transaction(() => {
     // Create transfer transaction
@@ -253,9 +270,13 @@ router.post('/rdn/withdraw', (req, res) => {
   }
 
   const numAmount = safeInt(amount);
+  if (numAmount <= 0) {
+    res.status(400).json(errorResponse('Nominal withdraw harus lebih besar dari 0'));
+    return;
+  }
 
   if (rdnWallet.balance < numAmount) {
-    res.status(400).json(errorResponse('Insufficient RDN balance'));
+    res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
     return;
   }
 

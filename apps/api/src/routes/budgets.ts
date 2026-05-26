@@ -15,6 +15,33 @@ try {
 router.get('/', (req, res) => {
   const period = (req.query.period as string) || currentPeriod();
 
+  // Auto-copy logic: if no budgets of type 'wajib' or 'langganan' exist for this period, copy from the latest period
+  const countResult = db.prepare("SELECT COUNT(*) as cnt FROM budgets WHERE period = ? AND type IN ('wajib', 'langganan')").get(period) as { cnt: number };
+  if (countResult.cnt === 0) {
+    // Find the latest period that has budget items
+    const latestPeriod = db.prepare(
+      `SELECT period FROM budgets WHERE period < ? AND type IN ('wajib', 'langganan') ORDER BY period DESC LIMIT 1`
+    ).get(period) as { period: string } | undefined;
+
+    if (latestPeriod) {
+      const itemsToCopy = db.prepare(
+        `SELECT name, category, type, estimate, details FROM budgets WHERE period = ? AND type IN ('wajib', 'langganan')`
+      ).all(latestPeriod.period) as any[];
+
+      const insert = db.prepare(`
+        INSERT INTO budgets (id, name, category, type, estimate, details, period, is_done)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+      `);
+
+      const insertTx = db.transaction((items: any[]) => {
+        for (const item of items) {
+          insert.run(generateId(), item.name, item.category, item.type, item.estimate, item.details, period);
+        }
+      });
+      insertTx(itemsToCopy);
+    }
+  }
+
   const budgets = db.prepare(`
     SELECT * FROM budgets WHERE period = ? ORDER BY type, is_done ASC, name ASC
   `).all(period);
@@ -86,6 +113,7 @@ router.put('/:id', (req, res) => {
 // When checking: auto-create an expense transaction
 // When unchecking: auto-delete the linked transaction
 router.patch('/:id/toggle', (req, res) => {
+  const { wallet_id } = req.body || {};
   const existing = db.prepare('SELECT * FROM budgets WHERE id = ?').get(req.params.id) as any;
   if (!existing) {
     res.status(404).json(errorResponse('Budget item not found'));
@@ -96,10 +124,24 @@ router.patch('/:id/toggle', (req, res) => {
 
   if (newStatus === 1) {
     // Marking as DONE → auto-create expense transaction
-    // Find the first available wallet for this transaction
-    const wallet = db.prepare(`SELECT id FROM wallets WHERE cluster = 'liquid' ORDER BY balance DESC LIMIT 1`).get() as any;
+    // Priority: 1) wallet_id from request body, 2) default_wallet from settings, 3) first liquid wallet
+    let walletId = wallet_id;
+    if (!walletId) {
+      const defaultSetting = db.prepare(`SELECT value FROM settings WHERE key = 'default_wallet'`).get() as { value: string } | undefined;
+      walletId = defaultSetting?.value;
+    }
+    if (!walletId) {
+      const firstLiquid = db.prepare(`SELECT id FROM wallets WHERE cluster = 'liquid' ORDER BY balance DESC LIMIT 1`).get() as { id: string } | undefined;
+      walletId = firstLiquid?.id;
+    }
+
+    const wallet = walletId ? db.prepare('SELECT * FROM wallets WHERE id = ?').get(walletId) as any : null;
     
     if (wallet) {
+      if (wallet.balance < existing.estimate) {
+        res.status(400).json(errorResponse('Saldo dompet tidak mencukupi'));
+        return;
+      }
       const txId = generateId();
       const today = new Date().toISOString().substring(0, 10);
       const typeLabel = existing.type === 'wishlist' ? 'Pembelian' : 'Pembayaran';
