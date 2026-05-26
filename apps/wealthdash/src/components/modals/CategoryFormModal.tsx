@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
+import { formatNumberString, parseNumberString } from '../../hooks/useApi';
 
 interface CategoryFormModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData, onS
       setType(initialData.type || 'expense');
       setIcon(initialData.icon || 'category');
       setLogoUrl(initialData.logo_path || null);
-      setBudget(initialData.budget ? initialData.budget.toString() : '');
+      setBudget(initialData.budget ? formatNumberString(initialData.budget) : '');
     } else if (isOpen) {
       setName('');
       setType('expense');
@@ -62,7 +63,7 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData, onS
       type,
       icon,
       logo_path: logoUrl,
-      budget: budget ? Number(budget) : null,
+      budget: budget ? parseNumberString(budget) : null,
     });
   };
 
@@ -110,10 +111,10 @@ const CategoryFormModal = ({ isOpen, onClose, editMode = false, initialData, onS
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-body-md">Rp</span>
               <input 
-                type="number" 
+                type="text" 
                 placeholder="0"
                 value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                onChange={(e) => setBudget(formatNumberString(e.target.value))}
                 className="w-full pl-12 pr-4 bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
               />
             </div>

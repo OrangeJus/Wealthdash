@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ModalOverlay from './ModalOverlay';
-import { formatRp } from '../../hooks/useApi';
+import { formatRp, formatNumberString, parseNumberString } from '../../hooks/useApi';
 
 interface BuyStockModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ const BuyStockModal = ({ isOpen, onClose, rdnBalance = 0, onBuy }: BuyStockModal
   const [price, setPrice] = useState('');
   const [lots, setLots] = useState('');
 
-  const numPrice = Number(price) || 0;
+  const numPrice = parseNumberString(price) || 0;
   const numLots = Number(lots) || 0;
   const totalCost = numPrice * numLots * 100;
   const canAfford = totalCost <= rdnBalance && totalCost > 0;
@@ -43,7 +43,7 @@ const BuyStockModal = ({ isOpen, onClose, rdnBalance = 0, onBuy }: BuyStockModal
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Harga per Lembar</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
-            <input type="number" placeholder="0" value={price} onChange={(e) => setPrice(e.target.value)}
+            <input type="text" placeholder="0" value={price} onChange={(e) => setPrice(formatNumberString(e.target.value))}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md" />
           </div>
         </div>

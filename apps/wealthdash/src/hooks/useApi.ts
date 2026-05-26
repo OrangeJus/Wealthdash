@@ -39,3 +39,22 @@ export function formatRp(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Format string or number with thousands separator (id-ID) dynamically.
+ */
+export function formatNumberString(val: string | number | null | undefined): string {
+  if (val === undefined || val === null || val === '') return '';
+  const raw = String(val).replace(/\D/g, '');
+  if (!raw) return '';
+  return new Intl.NumberFormat('id-ID').format(Number(raw));
+}
+
+/**
+ * Strip thousands separators and parse clean integer.
+ */
+export function parseNumberString(val: string | null | undefined): number {
+  if (!val) return 0;
+  const raw = String(val).replace(/\D/g, '');
+  return raw ? parseInt(raw, 10) : 0;
+}

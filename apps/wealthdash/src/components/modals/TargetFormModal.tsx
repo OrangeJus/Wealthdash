@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
+import { formatNumberString, parseNumberString } from '../../hooks/useApi';
 
 interface TargetFormModalProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ const TargetFormModal = ({ isOpen, onClose, editMode = false, initialData }: Tar
   useEffect(() => {
     if (editMode && initialData && isOpen) {
       setName(initialData.name || '');
-      setAmount(initialData.amount ? initialData.amount.toString() : '');
+      setAmount(initialData.amount ? formatNumberString(initialData.amount) : '');
       setIcon(initialData.icon || 'savings');
     } else if (isOpen) {
       setName('');
@@ -52,10 +53,10 @@ const TargetFormModal = ({ isOpen, onClose, editMode = false, initialData }: Tar
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
             <input 
-              type="number" 
+              type="text" 
               placeholder="0"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(formatNumberString(e.target.value))}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
             />
           </div>
@@ -79,7 +80,7 @@ const TargetFormModal = ({ isOpen, onClose, editMode = false, initialData }: Tar
 
         <button 
           onClick={handleClose}
-          disabled={!name || !amount || Number(amount) <= 0}
+          disabled={!name || !amount || parseNumberString(amount) <= 0}
           className="w-full mt-4 py-3.5 rounded-lg font-label-caps text-[14px] flex items-center justify-center gap-2 bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="material-symbols-outlined text-[18px]">save</span>

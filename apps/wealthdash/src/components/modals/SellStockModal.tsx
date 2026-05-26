@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
-import { formatRp } from '../../hooks/useApi';
+import { formatRp, formatNumberString, parseNumberString } from '../../hooks/useApi';
 
 interface SellStockModalProps {
   isOpen: boolean;
@@ -14,13 +14,13 @@ const SellStockModal = ({ isOpen, onClose, stockData, onSell }: SellStockModalPr
 
   useEffect(() => {
     if (isOpen && stockData) {
-      setSellPrice(String(stockData.currentPrice || ''));
+      setSellPrice(formatNumberString(stockData.currentPrice));
     }
   }, [isOpen, stockData]);
 
   if (!stockData) return null;
 
-  const numSellPrice = Number(sellPrice) || 0;
+  const numSellPrice = parseNumberString(sellPrice) || 0;
   const shares = (stockData.lots || 0) * 100;
   const totalSale = numSellPrice * shares;
   const totalModal = (stockData.buyPrice || 0) * shares;
@@ -45,7 +45,7 @@ const SellStockModal = ({ isOpen, onClose, stockData, onSell }: SellStockModalPr
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Harga Jual per Lembar</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
-            <input type="number" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)}
+            <input type="text" value={sellPrice} onChange={(e) => setSellPrice(formatNumberString(e.target.value))}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md" />
           </div>
         </div>

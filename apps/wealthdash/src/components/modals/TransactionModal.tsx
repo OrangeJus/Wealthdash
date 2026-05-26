@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
-import { useApi } from '../../hooks/useApi';
+import { useApi, formatNumberString, parseNumberString } from '../../hooks/useApi';
 import { walletsApi, categoriesApi, transactionsApi } from '../../services/api';
 
 interface TransactionModalProps {
@@ -37,7 +37,7 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
     if (editMode && initialData && isOpen) {
       setActiveTab(initialData.type || 'expense');
       setDate(initialData.date || new Date().toISOString().split('T')[0]);
-      setAmount(String(initialData.amount || ''));
+      setAmount(formatNumberString(initialData.amount));
       setCategoryId(initialData.category_id || '');
       setWalletId(initialData.wallet_id || '');
       setToWalletId(initialData.to_wallet_id || '');
@@ -81,7 +81,7 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
       const data = {
         date,
         type: activeTab,
-        amount: Number(amount),
+        amount: parseNumberString(amount),
         category_id: activeTab !== 'transfer' ? categoryId : null,
         wallet_id: walletId,
         to_wallet_id: activeTab === 'transfer' ? toWalletId : null,
@@ -152,10 +152,10 @@ const TransactionModal = ({ isOpen, onClose, defaultTab = 'expense', editMode = 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
             <input 
-              type="number" 
+              type="text" 
               placeholder="0"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(formatNumberString(e.target.value))}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md"
             />
           </div>

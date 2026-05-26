@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApi } from '../hooks/useApi';
+import { useApi, formatNumberString, parseNumberString } from '../hooks/useApi';
 import { settingsApi, exportApi, walletsApi } from '../services/api';
 
 const Settings = () => {
@@ -12,15 +12,15 @@ const Settings = () => {
 
   // Sync API data to local state once loaded
   if (settings && !initialized) {
-    setExpenseLimit(settings.expense_limit || '3000000');
-    setSavingsTarget(settings.savings_target || '250000');
+    setExpenseLimit(formatNumberString(settings.expense_limit) || '3.000.000');
+    setSavingsTarget(formatNumberString(settings.savings_target) || '250.000');
     setDefaultWallet(settings.default_wallet || '');
     setInitialized(true);
   }
 
   const handleSaveExpenseLimit = async () => {
     try {
-      await settingsApi.update('expense_limit', expenseLimit);
+      await settingsApi.update('expense_limit', String(parseNumberString(expenseLimit)));
       refetch();
       alert('Limit pengeluaran berhasil disimpan!');
     } catch (err: any) {
@@ -30,7 +30,7 @@ const Settings = () => {
 
   const handleSaveSavingsTarget = async () => {
     try {
-      await settingsApi.update('savings_target', savingsTarget);
+      await settingsApi.update('savings_target', String(parseNumberString(savingsTarget)));
       refetch();
       alert('Target tabungan berhasil disimpan!');
     } catch (err: any) {
@@ -88,7 +88,7 @@ const Settings = () => {
                   <input 
                     type="text" 
                     value={expenseLimit}
-                    onChange={(e) => setExpenseLimit(e.target.value)}
+                    onChange={(e) => setExpenseLimit(formatNumberString(e.target.value))}
                     className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface"
                   />
                 </div>
@@ -116,7 +116,7 @@ const Settings = () => {
                   <input 
                     type="text" 
                     value={savingsTarget}
-                    onChange={(e) => setSavingsTarget(e.target.value)}
+                    onChange={(e) => setSavingsTarget(formatNumberString(e.target.value))}
                     className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface"
                   />
                 </div>

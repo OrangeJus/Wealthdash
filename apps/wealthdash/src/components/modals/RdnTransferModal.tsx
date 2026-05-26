@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalOverlay from './ModalOverlay';
-import { formatRp } from '../../hooks/useApi';
+import { formatRp, formatNumberString, parseNumberString } from '../../hooks/useApi';
 import type { Wallet } from '../../types';
 
 interface RdnTransferModalProps {
@@ -24,7 +24,7 @@ const RdnTransferModal = ({ isOpen, onClose, type, rdnBalance = 0, wallets = [],
   }, [isOpen, wallets]);
 
   const selectedWallet = wallets.find(w => w.id === walletId);
-  const numAmount = Number(amount) || 0;
+  const numAmount = parseNumberString(amount) || 0;
 
   const handleSubmit = () => {
     if (!walletId || numAmount <= 0) return;
@@ -82,7 +82,7 @@ const RdnTransferModal = ({ isOpen, onClose, type, rdnBalance = 0, wallets = [],
           <label className="block font-body-sm text-body-sm text-on-surface-variant mb-1.5">Nominal</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">Rp</span>
-            <input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)}
+            <input type="text" placeholder="0" value={amount} onChange={(e) => setAmount(formatNumberString(e.target.value))}
               className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface text-body-md font-data-md" />
           </div>
         </div>
