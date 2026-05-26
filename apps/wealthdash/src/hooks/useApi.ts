@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Generic hook for fetching data from the API.
@@ -11,14 +11,29 @@ export function useApi<T>(
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const refetch = useCallback(() => {
     setLoading(true);
     setError(null);
     fetcher()
-      .then(setData)
-      .catch((err) => setError(err.message || 'Unknown error'))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (isMounted.current) setData(res);
+      })
+      .catch((err) => {
+        if (isMounted.current) setError(err.message || 'Unknown error');
+      })
+      .finally(() => {
+        if (isMounted.current) setLoading(false);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
