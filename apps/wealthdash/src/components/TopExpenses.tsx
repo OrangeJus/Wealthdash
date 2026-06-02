@@ -46,11 +46,14 @@ const TopExpenses = ({ refreshTrigger = 0 }: TopExpensesProps) => {
               showBudgetWarning = true;
             }
           }
-
           return (
             <div key={idx} className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-lg ${containerColor} ${iconColor} flex items-center justify-center shrink-0`}>
-                <span className="material-symbols-outlined text-[20px]">{item.icon || 'category'}</span>
+              <div className={`w-10 h-10 rounded-lg ${categoryInfo?.logo_path ? 'overflow-hidden bg-white shadow-sm' : `${containerColor} ${iconColor}`} flex items-center justify-center shrink-0`}>
+                {categoryInfo?.logo_path ? (
+                  <img src={categoryInfo.logo_path} alt={item.category} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">{item.icon || 'category'}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
