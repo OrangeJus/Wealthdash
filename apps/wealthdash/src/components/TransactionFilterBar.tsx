@@ -165,7 +165,7 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
 
               {/* Period */}
               <select
-                value={filters.date_from ? 'custom' : (filters.period || '')}
+                value={filters.period === 'today' || filters.period === 'this_week' ? filters.period : (filters.date_from ? 'custom' : (filters.period || ''))}
                 onChange={(e) => {
                   if (e.target.value === 'custom') {
                     setIsDateModalOpen(true);
@@ -176,6 +176,8 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
                 className="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-on-surface focus:outline-none focus:border-secondary transition-colors"
               >
                 <option value="">Semua Waktu</option>
+                <option value="today">Hari Ini</option>
+                <option value="this_week">Minggu Ini</option>
                 <option value={new Date().toISOString().substring(0, 7)}>Bulan Ini</option>
                 <option value="custom">Tanggal Kustom...</option>
               </select>
@@ -199,7 +201,11 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
                 ? (filters.date_from === filters.date_to
                     ? `Tanggal: ${filters.date_from}`
                     : `${filters.date_from} hingga ${filters.date_to}`)
-                : null;
+                : (filters.period === 'today'
+                    ? 'Hari Ini'
+                    : filters.period === 'this_week'
+                    ? 'Minggu Ini'
+                    : null);
 
               return (
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-secondary/5 p-3 rounded-lg border border-secondary/20">

@@ -36,8 +36,15 @@ router.get('/', (req, res) => {
     params.push(date_to);
   }
   if (period) {
-    whereClauses.push("t.date LIKE ? || '%'");
-    params.push(period);
+    if (period === 'today') {
+      whereClauses.push("t.date = strftime('%Y-%m-%d', 'now', 'localtime')");
+    } else if (period === 'this_week') {
+      whereClauses.push("t.date >= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0', '-6 days')");
+      whereClauses.push("t.date <= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0')");
+    } else {
+      whereClauses.push("t.date LIKE ? || '%'");
+      params.push(period);
+    }
   }
 
   const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
