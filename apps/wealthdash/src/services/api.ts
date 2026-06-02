@@ -105,10 +105,15 @@ export const transactionsApi = {
 // Analytics
 // ============================================================
 export const analyticsApi = {
-  overview: () => request<OverviewData>('/analytics/overview'),
+  overview: (filters?: Partial<TransactionFilters>) => {
+    const cleanFilters = filters ? Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) : {};
+    const qs = filters ? '?' + new URLSearchParams(cleanFilters as any) : '';
+    return request<OverviewData>(`/analytics/overview${qs}`);
+  },
   cashflow: (months = 6) => request<CashflowPoint[]>(`/analytics/cashflow?months=${months}`),
-  topExpenses: (period?: string) => {
-    const qs = period ? `?period=${period}` : '';
+  topExpenses: (filters?: Partial<TransactionFilters>) => {
+    const cleanFilters = filters ? Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) : {};
+    const qs = filters ? '?' + new URLSearchParams(cleanFilters as any) : '';
     return request<TopExpenseItem[]>(`/analytics/top-expenses${qs}`);
   },
   assetAllocation: () => request<AssetAllocationResponse>('/analytics/asset-allocation'),

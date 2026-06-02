@@ -5,23 +5,62 @@ import { successResponse, currentPeriod } from '../utils/helpers.js';
 const router = Router();
 
 // GET /api/analytics/overview — Dashboard summary cards
-router.get('/overview', (_req, res) => {
-  const period = currentPeriod();
+router.get('/overview', (req, res) => {
+  const { wallet_id, category_id, date_from, date_to, period } = req.query;
+
+  // Build dynamic WHERE clauses for dynamic summary
+  let whereClauses: string[] = [];
+  let params: any[] = [];
+
+  if (category_id) {
+    whereClauses.push('category_id = ?');
+    params.push(category_id);
+  }
+  if (wallet_id) {
+    whereClauses.push('(wallet_id = ? OR to_wallet_id = ?)');
+    params.push(wallet_id, wallet_id);
+  }
+  if (date_from) {
+    whereClauses.push('date >= ?');
+    params.push(date_from);
+  }
+  if (date_to) {
+    whereClauses.push('date <= ?');
+    params.push(date_to);
+  }
+  if (period) {
+    if (period === 'today') {
+      whereClauses.push("date = strftime('%Y-%m-%d', 'now', 'localtime')");
+    } else if (period === 'this_week') {
+      whereClauses.push("date >= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0', '-6 days')");
+      whereClauses.push("date <= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0')");
+    } else if (period === 'this_year') {
+      whereClauses.push("date LIKE strftime('%Y', 'now', 'localtime') || '%'");
+    } else {
+      whereClauses.push("date LIKE ? || '%'");
+      params.push(period);
+    }
+  } else if (!date_from && !date_to) {
+    // Default fallback to active period (this month) for backward compat / dashboard
+    const currentP = currentPeriod();
+    whereClauses.push("date LIKE ? || '%'");
+    params.push(currentP);
+  }
+
+  const whereSQL = whereClauses.length > 0 ? ' AND ' + whereClauses.join(' AND ') : '';
 
   // Total balance across all wallets
   const totalBalance = db.prepare(
     'SELECT COALESCE(SUM(balance), 0) as total FROM wallets'
   ).get() as { total: number };
 
-  // Monthly income
-  const monthlyIncome = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'income' AND date LIKE ? || '%'`
-  ).get(period) as { total: number };
+  // Dynamic income
+  const incomeQuery = `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'income' ${whereSQL}`;
+  const monthlyIncome = db.prepare(incomeQuery).get(...params) as { total: number };
 
-  // Monthly expenses
-  const monthlyExpenses = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'expense' AND date LIKE ? || '%'`
-  ).get(period) as { total: number };
+  // Dynamic expenses
+  const expenseQuery = `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE type = 'expense' ${whereSQL}`;
+  const monthlyExpenses = db.prepare(expenseQuery).get(...params) as { total: number };
 
   // Previous month for trend calculation
   const prevDate = new Date();
@@ -41,9 +80,10 @@ router.get('/overview', (_req, res) => {
   const savingsTarget = db.prepare("SELECT value FROM settings WHERE key = 'savings_target'").get() as { value: string } | undefined;
 
   // Savings progress this month
+  const fallbackPeriod = (period && period !== 'today' && period !== 'this_week' && period !== 'this_year') ? String(period) : currentPeriod();
   const monthlySavings = db.prepare(
     `SELECT COALESCE(SUM(amount), 0) as total FROM savings_deposits WHERE period = ?`
-  ).get(period) as { total: number };
+  ).get(fallbackPeriod) as { total: number };
 
   res.json(successResponse({
     totalBalance: totalBalance.total,
@@ -54,7 +94,7 @@ router.get('/overview', (_req, res) => {
     expenseLimit: parseInt(expenseLimit?.value || '0'),
     savingsTarget: parseInt(savingsTarget?.value || '0'),
     monthlySavings: monthlySavings.total,
-    period,
+    period: period || fallbackPeriod,
   }));
 });
 
@@ -81,9 +121,49 @@ router.get('/cashflow', (req, res) => {
   res.json(successResponse(data));
 });
 
-// GET /api/analytics/top-expenses?period=YYYY-MM — Top spending categories
+// GET /api/analytics/top-expenses — Top spending categories with dynamic filters
 router.get('/top-expenses', (req, res) => {
-  const period = (req.query.period as string) || currentPeriod();
+  const { wallet_id, category_id, date_from, date_to, period } = req.query;
+
+  let whereClauses: string[] = ["t.type = 'expense'"];
+  let params: any[] = [];
+
+  if (category_id) {
+    whereClauses.push('t.category_id = ?');
+    params.push(category_id);
+  }
+  if (wallet_id) {
+    whereClauses.push('(t.wallet_id = ? OR t.to_wallet_id = ?)');
+    params.push(wallet_id, wallet_id);
+  }
+  if (date_from) {
+    whereClauses.push('t.date >= ?');
+    params.push(date_from);
+  }
+  if (date_to) {
+    whereClauses.push('t.date <= ?');
+    params.push(date_to);
+  }
+  if (period) {
+    if (period === 'today') {
+      whereClauses.push("t.date = strftime('%Y-%m-%d', 'now', 'localtime')");
+    } else if (period === 'this_week') {
+      whereClauses.push("t.date >= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0', '-6 days')");
+      whereClauses.push("t.date <= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0')");
+    } else if (period === 'this_year') {
+      whereClauses.push("t.date LIKE strftime('%Y', 'now', 'localtime') || '%'");
+    } else {
+      whereClauses.push("t.date LIKE ? || '%'");
+      params.push(period);
+    }
+  } else if (!date_from && !date_to) {
+    // Default fallback to active period (this month) for backward compat / dashboard
+    const currentP = currentPeriod();
+    whereClauses.push("t.date LIKE ? || '%'");
+    params.push(currentP);
+  }
+
+  const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
   const data = db.prepare(`
     SELECT 
@@ -95,11 +175,11 @@ router.get('/top-expenses', (req, res) => {
       COUNT(*) as count
     FROM transactions t
     JOIN categories c ON t.category_id = c.id
-    WHERE t.type = 'expense' AND t.date LIKE ? || '%'
+    ${whereSQL}
     GROUP BY c.id
     ORDER BY total DESC
     LIMIT 10
-  `).all(period);
+  `).all(...params);
 
   res.json(successResponse(data));
 });

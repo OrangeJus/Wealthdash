@@ -1,13 +1,15 @@
 import { useApi, formatRp } from '../hooks/useApi';
 import { analyticsApi, categoriesApi } from '../services/api';
+import type { TransactionFilters } from '../types';
 
 interface TransactionChartsProps {
   onViewCategories?: () => void;
+  filters?: TransactionFilters;
 }
 
-const TransactionCharts = ({ onViewCategories }: TransactionChartsProps) => {
-  const { data: overview } = useApi(() => analyticsApi.overview(), []);
-  const { data: topExpenses } = useApi(() => analyticsApi.topExpenses(), []);
+const TransactionCharts = ({ onViewCategories, filters }: TransactionChartsProps) => {
+  const { data: overview } = useApi(() => analyticsApi.overview(filters), [JSON.stringify(filters)]);
+  const { data: topExpenses } = useApi(() => analyticsApi.topExpenses(filters), [JSON.stringify(filters)]);
   const { data: categoriesData } = useApi(() => categoriesApi.list(), []);
 
   const income = overview?.monthlyIncome || 0;

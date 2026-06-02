@@ -64,7 +64,7 @@ const Transaksi = ({ onOpenTransaction, onEditTransaction, onViewCategories, ref
       </header>
 
       {/* Summary Charts */}
-      <TransactionCharts onViewCategories={onViewCategories} />
+      <TransactionCharts onViewCategories={onViewCategories} filters={filters} />
 
       {/* Filter Bar */}
       <TransactionFilterBar 

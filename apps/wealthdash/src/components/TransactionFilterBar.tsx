@@ -165,7 +165,7 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
 
               {/* Period */}
               <select
-                value={filters.period === 'today' || filters.period === 'this_week' ? filters.period : (filters.date_from ? 'custom' : (filters.period || ''))}
+                value={filters.period === 'today' || filters.period === 'this_week' || filters.period === 'this_year' ? filters.period : (filters.date_from ? 'custom' : (filters.period || ''))}
                 onChange={(e) => {
                   if (e.target.value === 'custom') {
                     setIsDateModalOpen(true);
@@ -179,6 +179,7 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
                 <option value="today">Hari Ini</option>
                 <option value="this_week">Minggu Ini</option>
                 <option value={new Date().toISOString().substring(0, 7)}>Bulan Ini</option>
+                <option value="this_year">Tahun Ini</option>
                 <option value="custom">Tanggal Kustom...</option>
               </select>
 
@@ -205,6 +206,8 @@ const TransactionFilterBar = ({ filters, onFilterChange }: TransactionFilterBarP
                     ? 'Hari Ini'
                     : filters.period === 'this_week'
                     ? 'Minggu Ini'
+                    : filters.period === 'this_year'
+                    ? 'Tahun Ini'
                     : null);
 
               return (

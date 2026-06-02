@@ -41,6 +41,8 @@ router.get('/', (req, res) => {
     } else if (period === 'this_week') {
       whereClauses.push("t.date >= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0', '-6 days')");
       whereClauses.push("t.date <= strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0')");
+    } else if (period === 'this_year') {
+      whereClauses.push("t.date LIKE strftime('%Y', 'now', 'localtime') || '%'");
     } else {
       whereClauses.push("t.date LIKE ? || '%'");
       params.push(period);
