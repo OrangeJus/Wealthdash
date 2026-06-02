@@ -35,7 +35,7 @@ function getDefaultTargetId(): string {
   const id = generateId();
   db.prepare(`
     INSERT INTO savings_targets (id, name, icon, monthly_amount, is_active)
-    VALUES (?, 'Tabungan', 'savings', 0, 1)
+    VALUES (?, 'Tabungan', 'savings', 1, 1)
   `).run(id);
   return id;
 }
