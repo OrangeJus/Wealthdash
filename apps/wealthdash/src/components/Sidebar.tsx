@@ -8,8 +8,8 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
     { id: 'Dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'Transaksi', icon: 'receipt_long', label: 'Transaksi' },
     { id: 'Anggaran', icon: 'event_repeat', label: 'Anggaran' },
-    { id: 'Tabungan', icon: 'savings', label: 'Tabungan' },
     { id: 'Dompet', icon: 'account_balance_wallet', label: 'Dompet' },
+    { id: 'Tabungan', icon: 'savings', label: 'Tabungan' },
     { id: 'Investasi', icon: 'monitoring', label: 'Investasi' },
     { id: 'Analitik', icon: 'analytics', label: 'Analitik' }
   ];

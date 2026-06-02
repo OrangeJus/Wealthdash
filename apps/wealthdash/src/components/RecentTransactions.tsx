@@ -10,7 +10,7 @@ const RecentTransactions = ({ onViewAll }: RecentTransactionsProps) => {
   const { data: transactions } = useApi(() => transactionsApi.recent(), []);
 
   const getTypeDisplay = (tx: Transaction) => {
-    if (tx.type === 'income') return { label: 'INCOME', icon: 'work', typeClass: 'bg-[#dcfce7] text-[#166534]' };
+    if (tx.type === 'income') return { label: 'INCOME', icon: tx.category_icon || 'work', typeClass: 'bg-[#dcfce7] text-[#166534]' };
     if (tx.type === 'expense') return { label: 'EXPENSE', icon: tx.category_icon || 'receipt', typeClass: 'bg-[#fee2e2] text-[#991b1b]' };
     return { label: 'TRANSFER', icon: 'sync_alt', typeClass: 'bg-[#f1f5f9] text-[#475569]' };
   };
@@ -57,7 +57,12 @@ const RecentTransactions = ({ onViewAll }: RecentTransactionsProps) => {
                     <span className={`${display.typeClass} px-2 py-1 rounded text-[11px] font-label-caps`}>{display.label}</span>
                   </td>
                   <td className="py-3 px-6 whitespace-nowrap flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{display.icon}</span> {tx.category_name || tx.type}
+                    {tx.category_logo_path ? (
+                      <img src={tx.category_logo_path} alt={tx.category_name || ''} className="w-5 h-5 rounded object-cover shrink-0" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{display.icon}</span>
+                    )}
+                    <span>{tx.category_name || tx.type}</span>
                   </td>
                   <td className="py-3 px-6 whitespace-nowrap">{walletLabel}</td>
                   <td className="py-3 px-6 hidden sm:table-cell text-on-surface-variant truncate max-w-[200px]">{tx.note || '-'}</td>

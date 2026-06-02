@@ -54,6 +54,7 @@ export interface Transaction {
   // Joined fields
   category_name?: string;
   category_icon?: string;
+  category_logo_path?: string | null;
   wallet_name?: string;
   to_wallet_name?: string;
 }

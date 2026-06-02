@@ -46,7 +46,7 @@ router.get('/', (req, res) => {
 
   const transactions = db.prepare(`
     SELECT t.*, 
-      c.name as category_name, c.icon as category_icon,
+      c.name as category_name, c.icon as category_icon, c.logo_path as category_logo_path,
       w.name as wallet_name,
       tw.name as to_wallet_name
     FROM transactions t
@@ -73,7 +73,7 @@ router.get('/', (req, res) => {
 router.get('/recent', (_req, res) => {
   const transactions = db.prepare(`
     SELECT t.*, 
-      c.name as category_name, c.icon as category_icon,
+      c.name as category_name, c.icon as category_icon, c.logo_path as category_logo_path,
       w.name as wallet_name,
       tw.name as to_wallet_name
     FROM transactions t
@@ -151,7 +151,7 @@ router.post('/', (req, res) => {
   insertTx();
 
   const transaction = db.prepare(`
-    SELECT t.*, c.name as category_name, w.name as wallet_name, tw.name as to_wallet_name
+    SELECT t.*, c.name as category_name, c.icon as category_icon, c.logo_path as category_logo_path, w.name as wallet_name, tw.name as to_wallet_name
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     LEFT JOIN wallets w ON t.wallet_id = w.id
@@ -231,7 +231,7 @@ router.put('/:id', (req, res) => {
   updateTx();
 
   const updated = db.prepare(`
-    SELECT t.*, c.name as category_name, w.name as wallet_name, tw.name as to_wallet_name
+    SELECT t.*, c.name as category_name, c.icon as category_icon, c.logo_path as category_logo_path, w.name as wallet_name, tw.name as to_wallet_name
     FROM transactions t
     LEFT JOIN categories c ON t.category_id = c.id
     LEFT JOIN wallets w ON t.wallet_id = w.id

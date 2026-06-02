@@ -137,19 +137,27 @@ const Kategori = ({ onBack }: KategoriProps) => {
           <h3 className="font-headline-md text-headline-md text-on-surface border-b border-outline-variant/30 pb-2">Kategori Pemasukan</h3>
           <div className="flex flex-col gap-3">
             {incomes.map(cat => (
-              <div key={cat.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex justify-between items-center hover:bg-surface-container-low transition-colors group cursor-pointer" onClick={() => handleEdit(cat)}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-[#dcfce7] text-[#166534] flex items-center justify-center">
-                    <span className="material-symbols-outlined">{cat.icon}</span>
+              <div key={cat.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-col hover:bg-surface-container-low transition-colors group cursor-pointer" onClick={() => handleEdit(cat)}>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    {cat.logo_path ? (
+                      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                        <img src={cat.logo_path} alt={cat.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-[#dcfce7] text-[#166534] flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined">{cat.icon}</span>
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-body-md text-body-md font-semibold text-on-surface">{cat.name}</div>
+                      <div className="font-body-sm text-[12px] text-on-surface-variant mt-0.5">{cat.transaction_count || 0} Transaksi</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-body-md text-body-md font-semibold text-on-surface">{cat.name}</div>
-                    <div className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{cat.transaction_count || 0} Transaksi</div>
-                  </div>
+                  <button className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-secondary group-hover:text-on-secondary transition-colors shrink-0">
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
                 </div>
-                <button className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
-                  <span className="material-symbols-outlined text-[18px]">edit</span>
-                </button>
               </div>
             ))}
           </div>

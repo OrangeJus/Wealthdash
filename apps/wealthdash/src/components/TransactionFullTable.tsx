@@ -53,7 +53,14 @@ const TransactionFullTable = ({ transactions, pagination, onEdit, onDelete, onPa
                   </td>
                   <td className="px-6 py-4 font-medium">{tx.note || '-'}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-surface-container text-on-surface-variant text-xs">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container text-on-surface-variant text-xs">
+                      {tx.category_logo_path ? (
+                        <img src={tx.category_logo_path} alt={tx.category_name || ''} className="w-4 h-4 rounded object-cover shrink-0" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[14px]">
+                          {tx.type === 'income' ? (tx.category_icon || 'work') : tx.type === 'expense' ? (tx.category_icon || 'receipt') : 'sync_alt'}
+                        </span>
+                      )}
                       {tx.category_name || tx.type}
                     </span>
                   </td>
