@@ -56,6 +56,47 @@ export function formatRp(amount: number): string {
 }
 
 /**
+ * Format number as Rupiah string with financial abbreviations (frontend-side).
+ * Used for cards, dashboard summaries, etc.
+ */
+export function formatRpShort(amount: number): string {
+  const isNegative = amount < 0;
+  const absVal = Math.abs(amount);
+  
+  let formatted = '';
+  
+  if (absVal >= 1e12) {
+    // Triliun (T)
+    const num = absVal / 1e12;
+    formatted = formatNumberWithMaxDecimals(num) + ' T';
+  } else if (absVal >= 1e9) {
+    // Miliar (M)
+    const num = absVal / 1e9;
+    formatted = formatNumberWithMaxDecimals(num) + ' M';
+  } else if (absVal >= 1e6) {
+    // Juta (Jt)
+    const num = absVal / 1e6;
+    formatted = formatNumberWithMaxDecimals(num) + ' Jt';
+  } else if (absVal >= 1e3) {
+    // Ribu (Rb)
+    const num = absVal / 1e3;
+    formatted = formatNumberWithMaxDecimals(num) + ' Rb';
+  } else {
+    // Di bawah 1000
+    formatted = String(absVal);
+  }
+  
+  return isNegative ? `Rp -${formatted}` : `Rp ${formatted}`;
+}
+
+function formatNumberWithMaxDecimals(num: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+/**
  * Format string or number with thousands separator (id-ID) dynamically.
  */
 export function formatNumberString(val: string | number | null | undefined): string {

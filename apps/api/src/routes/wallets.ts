@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, safeInt, validateLogoSizeAndFormat } from '../utils/helpers.js';
 
 const router = Router();
 
@@ -54,11 +54,36 @@ router.post('/', (req, res) => {
     return;
   }
 
+  // Validate logo size & format
+  const logoValidation = validateLogoSizeAndFormat(logo_path);
+  if (!logoValidation.isValid) {
+    res.status(400).json(errorResponse(logoValidation.error || 'Invalid logo'));
+    return;
+  }
+
   const id = generateId();
-  db.prepare(`
-    INSERT INTO wallets (id, name, icon, logo_path, cluster, balance)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, name, icon || 'account_balance_wallet', logo_path || null, cluster, balance || 0);
+  const initialBalance = safeInt(balance) || 0;
+
+  // Use a database transaction for atomicity
+  const createWalletTx = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO wallets (id, name, icon, logo_path, cluster, balance)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, name, icon || 'account_balance_wallet', logo_path || null, cluster, initialBalance);
+
+    // If wallet has an initial balance, create an "opening balance" income transaction
+    // so that recalculateWalletBalance (which computes from transactions) stays correct.
+    if (initialBalance > 0) {
+      const txId = generateId();
+      const today = new Date().toISOString().split('T')[0];
+      db.prepare(`
+        INSERT INTO transactions (id, date, type, amount, category_id, wallet_id, to_wallet_id, note)
+        VALUES (?, ?, 'income', ?, NULL, ?, NULL, ?)
+      `).run(txId, today, initialBalance, id, 'Saldo awal');
+    }
+  });
+
+  createWalletTx();
 
   const wallet = db.prepare('SELECT * FROM wallets WHERE id = ?').get(id);
   res.status(201).json(successResponse(wallet, 'Wallet created'));
@@ -73,6 +98,13 @@ router.put('/:id', (req, res) => {
   }
 
   const { name, icon, logo_path, cluster } = req.body;
+
+  // Validate logo size & format
+  const logoValidation = validateLogoSizeAndFormat(logo_path);
+  if (!logoValidation.isValid) {
+    res.status(400).json(errorResponse(logoValidation.error || 'Invalid logo'));
+    return;
+  }
 
   db.prepare(`
     UPDATE wallets 

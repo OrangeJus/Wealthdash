@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse, safeInt } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, safeInt, recalculateWalletBalance } from '../utils/helpers.js';
 import { fetchMultipleStockPrices } from '../services/stockPrice.js';
 
 const router = Router();
@@ -100,9 +100,15 @@ router.post('/buy', (req, res) => {
       VALUES (?, ?, 'buy', ?, ?, ?, ?, ?)
     `).run(tradeId, holdingId, code.toUpperCase(), numPrice, numLots, totalAmount, rdnWallet.id);
 
-    // Deduct from RDN wallet
-    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(totalAmount, rdnWallet.id);
+    // Create expense transaction for stock purchase (so recalculateWalletBalance stays consistent)
+    const expTxId = generateId();
+    db.prepare(`
+      INSERT INTO transactions (id, date, type, amount, wallet_id, note)
+      VALUES (?, date('now', 'localtime'), 'expense', ?, ?, ?)
+    `).run(expTxId, totalAmount, rdnWallet.id, `Beli saham ${code.toUpperCase()} ${numLots} lot`);
+
+    // Recalculate RDN wallet balance from transactions
+    recalculateWalletBalance(rdnWallet.id);
 
     return { holdingId, tradeId };
   });
@@ -155,14 +161,21 @@ router.post('/sell', (req, res) => {
     // Remove holding (set lots to 0 to keep history)
     db.prepare('UPDATE stock_holdings SET lots = 0 WHERE id = ?').run(holding_id);
 
-    // Credit RDN wallet
-    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(hasilJual, rdnWallet.id);
+    // Create income transaction for stock sale (so recalculateWalletBalance stays consistent)
+    const incTxId = generateId();
+    db.prepare(`
+      INSERT INTO transactions (id, date, type, amount, wallet_id, note)
+      VALUES (?, date('now', 'localtime'), 'income', ?, ?, ?)
+    `).run(incTxId, hasilJual, rdnWallet.id, `Jual saham ${holding.code} ${holding.lots} lot`);
+
+    // Recalculate RDN wallet balance from transactions
+    recalculateWalletBalance(rdnWallet.id);
 
     return { tradeId, realizedPnl };
   });
 
   const result = sellTx();
+  const updatedRdn = db.prepare('SELECT balance FROM wallets WHERE id = ?').get(rdnWallet.id) as any;
 
   res.json(successResponse({
     code: holding.code,
@@ -171,7 +184,7 @@ router.post('/sell', (req, res) => {
     hasilJual,
     totalModal,
     realizedPnl: result.realizedPnl,
-    rdnBalanceAfter: rdnWallet.balance + hasilJual,
+    rdnBalanceAfter: updatedRdn?.balance ?? 0,
   }, 'Stock sold'));
 });
 
@@ -237,11 +250,9 @@ router.post('/rdn/topup', (req, res) => {
       VALUES (?, date('now', 'localtime'), 'transfer', ?, ?, ?, 'Top-up RDN')
     `).run(txId, numAmount, from_wallet_id, rdnWallet.id);
 
-    // Update balances
-    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(numAmount, from_wallet_id);
-    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(numAmount, rdnWallet.id);
+    // Recalculate both wallet balances from transactions
+    recalculateWalletBalance(from_wallet_id);
+    recalculateWalletBalance(rdnWallet.id);
   });
 
   topupTx();
@@ -287,10 +298,9 @@ router.post('/rdn/withdraw', (req, res) => {
       VALUES (?, date('now', 'localtime'), 'transfer', ?, ?, ?, 'Withdraw RDN')
     `).run(txId, numAmount, rdnWallet.id, to_wallet_id);
 
-    db.prepare("UPDATE wallets SET balance = balance - ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(numAmount, rdnWallet.id);
-    db.prepare("UPDATE wallets SET balance = balance + ?, updated_at = datetime('now', 'localtime') WHERE id = ?")
-      .run(numAmount, to_wallet_id);
+    // Recalculate both wallet balances from transactions
+    recalculateWalletBalance(rdnWallet.id);
+    recalculateWalletBalance(to_wallet_id);
   });
 
   withdrawTx();

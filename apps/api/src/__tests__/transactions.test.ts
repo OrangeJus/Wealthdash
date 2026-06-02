@@ -163,4 +163,149 @@ describe('Transactions API — Proteksi Saldo & Akurasi Kalkulasi', () => {
       expect(walletRes.body.data.balance).toBe(300000);
     });
   });
+
+  describe('Transfer Antar Dompet dengan Saldo Awal (Bug Fix)', () => {
+    it('transfer dari dompet B ke A — saldo awal dipertahankan', async () => {
+      // Reproduksi kasus bug user:
+      // Dompet A: Rp 200.000, Dompet B: Rp 300.000
+      // Transfer Rp 50.000 dari B → A
+      // Expected: A = 250.000, B = 250.000
+      cleanDatabase();
+
+      // Buat Dompet A dengan saldo awal Rp 200.000
+      const walletARes = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet A', cluster: 'liquid', balance: 200000 });
+      const dompetA = walletARes.body.data.id;
+      expect(walletARes.body.data.balance).toBe(200000);
+
+      // Buat Dompet B dengan saldo awal Rp 300.000
+      const walletBRes = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet B', cluster: 'liquid', balance: 300000 });
+      const dompetB = walletBRes.body.data.id;
+      expect(walletBRes.body.data.balance).toBe(300000);
+
+      // Transfer Rp 50.000 dari Dompet B ke Dompet A
+      const transferRes = await request(app).post('/api/transactions').send({
+        date: '2026-06-01',
+        type: 'transfer',
+        amount: 50000,
+        wallet_id: dompetB,
+        to_wallet_id: dompetA,
+        note: 'Transfer test B ke A',
+      });
+      expect(transferRes.status).toBe(201);
+
+      // Verifikasi saldo: A harus 250k, B harus 250k
+      const checkA = await request(app).get(`/api/wallets/${dompetA}`);
+      expect(checkA.body.data.balance).toBe(250000);
+
+      const checkB = await request(app).get(`/api/wallets/${dompetB}`);
+      expect(checkB.body.data.balance).toBe(250000);
+    });
+
+    it('transfer berulang tidak menimpa saldo', async () => {
+      cleanDatabase();
+
+      // Buat Dompet A: Rp 500.000
+      const wA = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet A', cluster: 'liquid', balance: 500000 });
+      const idA = wA.body.data.id;
+
+      // Buat Dompet B: Rp 100.000
+      const wB = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet B', cluster: 'liquid', balance: 100000 });
+      const idB = wB.body.data.id;
+
+      // Transfer 1: 100k dari A → B
+      await request(app).post('/api/transactions').send({
+        date: '2026-06-01', type: 'transfer', amount: 100000,
+        wallet_id: idA, to_wallet_id: idB,
+      });
+
+      // A: 500k - 100k = 400k, B: 100k + 100k = 200k
+      let checkA = await request(app).get(`/api/wallets/${idA}`);
+      expect(checkA.body.data.balance).toBe(400000);
+      let checkB = await request(app).get(`/api/wallets/${idB}`);
+      expect(checkB.body.data.balance).toBe(200000);
+
+      // Transfer 2: 50k dari B → A
+      await request(app).post('/api/transactions').send({
+        date: '2026-06-01', type: 'transfer', amount: 50000,
+        wallet_id: idB, to_wallet_id: idA,
+      });
+
+      // A: 400k + 50k = 450k, B: 200k - 50k = 150k
+      checkA = await request(app).get(`/api/wallets/${idA}`);
+      expect(checkA.body.data.balance).toBe(450000);
+      checkB = await request(app).get(`/api/wallets/${idB}`);
+      expect(checkB.body.data.balance).toBe(150000);
+    });
+
+    it('⛔ transfer ditolak jika melebihi saldo dompet sumber', async () => {
+      cleanDatabase();
+
+      const wA = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet A', cluster: 'liquid', balance: 100000 });
+      const idA = wA.body.data.id;
+
+      const wB = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'Dompet B', cluster: 'liquid', balance: 50000 });
+      const idB = wB.body.data.id;
+
+      // Transfer 200k dari A (saldo hanya 100k) — harus ditolak
+      const res = await request(app).post('/api/transactions').send({
+        date: '2026-06-01', type: 'transfer', amount: 200000,
+        wallet_id: idA, to_wallet_id: idB,
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Saldo dompet tidak mencukupi');
+
+      // Saldo tidak berubah
+      const checkA = await request(app).get(`/api/wallets/${idA}`);
+      expect(checkA.body.data.balance).toBe(100000);
+      const checkB = await request(app).get(`/api/wallets/${idB}`);
+      expect(checkB.body.data.balance).toBe(50000);
+    });
+  });
+
+  describe('Riwayat Transaksi Transfer', () => {
+    it('transfer tercatat dalam riwayat transaksi dengan informasi lengkap', async () => {
+      const transferRes = await request(app).post('/api/transactions').send({
+        date: '2026-06-01',
+        type: 'transfer',
+        amount: 100000,
+        wallet_id: walletId,
+        to_wallet_id: walletBId,
+        note: 'Pindah dana ke dompet B',
+      });
+      expect(transferRes.status).toBe(201);
+
+      // Cek data transfer di response
+      const tx = transferRes.body.data;
+      expect(tx.type).toBe('transfer');
+      expect(tx.amount).toBe(100000);
+      expect(tx.wallet_id).toBe(walletId);
+      expect(tx.to_wallet_id).toBe(walletBId);
+      expect(tx.wallet_name).toBe('Dompet Utama');
+      expect(tx.to_wallet_name).toBe('Dompet B');
+      expect(tx.note).toBe('Pindah dana ke dompet B');
+      expect(tx.date).toBe('2026-06-01');
+
+      // Cek transfer muncul di daftar transaksi
+      const listRes = await request(app).get('/api/transactions?type=transfer');
+      expect(listRes.body.data.transactions.length).toBeGreaterThanOrEqual(1);
+
+      const found = listRes.body.data.transactions.find((t: any) => t.id === tx.id);
+      expect(found).toBeDefined();
+      expect(found.wallet_name).toBe('Dompet Utama');
+      expect(found.to_wallet_name).toBe('Dompet B');
+    });
+  });
 });

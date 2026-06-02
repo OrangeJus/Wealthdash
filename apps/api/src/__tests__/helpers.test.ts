@@ -61,6 +61,21 @@ describe('Helper Utilities', () => {
     it('mengembalikan custom default', () => {
       expect(safeInt('xyz', 100)).toBe(100);
     });
+
+    it('menangani string dengan dot pemisah ribuan', () => {
+      expect(safeInt('12.000')).toBe(12000);
+      expect(safeInt('1.250.000')).toBe(1250000);
+    });
+
+    it('menangani string dengan simbol mata uang dan dot', () => {
+      expect(safeInt('Rp 50.000')).toBe(50000);
+      expect(safeInt('Rp -25.000')).toBe(-25000);
+    });
+
+    it('menangani tipe input number secara langsung', () => {
+      expect(safeInt(12000)).toBe(12000);
+      expect(safeInt(-150.5)).toBe(-151);
+    });
   });
 
   describe('currentPeriod()', () => {

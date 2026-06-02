@@ -1,62 +1,9 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse, safeInt, currentPeriod } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, safeInt, currentPeriod, recalculateWalletBalance } from '../utils/helpers.js';
 
 const router = Router();
 
-/**
- * Helper: Recalculate a wallet's balance from all its transactions.
- * This is the source of truth — called after any transaction mutation.
- */
-function recalculateWalletBalance(walletId: string): void {
-  // Income adds to wallet, expense subtracts, transfer-from subtracts
-  const incomeSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'income'`
-  ).get(walletId) as { total: number };
-
-  const expenseSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'expense'`
-  ).get(walletId) as { total: number };
-
-  const transferOutSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'transfer'`
-  ).get(walletId) as { total: number };
-
-  const transferInSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE to_wallet_id = ? AND type = 'transfer'`
-  ).get(walletId) as { total: number };
-
-  // Get the initial balance from settings or assume 0
-  // In our system, the initial wallet balance is set at creation and stored.
-  // Transactions modify relative to that initial balance.
-  const wallet = db.prepare('SELECT balance FROM wallets WHERE id = ?').get(walletId) as any;
-  if (!wallet) return;
-
-  // We recalculate: initial_balance is stored separately, but for simplicity,
-  // we track the absolute balance. On create, balance = initial_balance.
-  // After that: balance = initial + SUM(income) - SUM(expense) - SUM(transfer_out) + SUM(transfer_in)
-  // 
-  // Since initial balance was already set at wallet creation and we compute from all transactions,
-  // we need the initial balance. Let's store it in a separate approach:
-  // Actually the simplest is: when wallet is created, its initial balance is recorded.
-  // All subsequent changes happen through transactions.
-  // So: current_balance = initial_balance + income - expense - transfer_out + transfer_in
-
-  // For now, let's compute from initial_balance stored at creation
-  // We'll need to track initial_balance. Let's use a simpler method:
-  // recompute from the initial balance that we saved
-
-  // REVISED APPROACH: wallet.balance is always the CURRENT computed balance.
-  // We don't track initial_balance separately — instead, when creating a wallet with an initial balance,
-  // we create a special "opening balance" income transaction.
-  // So the formula is simply: balance = SUM(income) - SUM(expense) - SUM(transfer_out) + SUM(transfer_in)
-
-  const newBalance = incomeSum.total - expenseSum.total - transferOutSum.total + transferInSum.total;
-
-  db.prepare(`
-    UPDATE wallets SET balance = ?, updated_at = datetime('now', 'localtime') WHERE id = ?
-  `).run(newBalance, walletId);
-}
 
 // GET /api/transactions — List with filters & pagination
 router.get('/', (req, res) => {

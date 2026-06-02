@@ -46,6 +46,24 @@ const WalletFormModal = ({ isOpen, onClose, editMode = false, initialData, onSav
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (5 MB = 5 * 1024 * 1024 bytes)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran file melebihi batas maksimum 5 MB.");
+        e.target.value = '';
+        return;
+      }
+
+      // Validate file format (PNG, JPG, JPEG, SVG)
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const allowedExts = ['png', 'jpg', 'jpeg', 'svg'];
+      const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+      
+      if (!allowedMimes.includes(file.type) && !(fileExt && allowedExts.includes(fileExt))) {
+        alert("Format gambar tidak didukung. Gunakan PNG, JPG, JPEG, atau SVG.");
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoUrl(reader.result as string);

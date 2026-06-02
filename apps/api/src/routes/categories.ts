@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, validateLogoSizeAndFormat } from '../utils/helpers.js';
 
 const router = Router();
 
@@ -48,6 +48,13 @@ router.post('/', (req, res) => {
     return;
   }
 
+  // Validate logo size & format
+  const logoValidation = validateLogoSizeAndFormat(logo_path);
+  if (!logoValidation.isValid) {
+    res.status(400).json(errorResponse(logoValidation.error || 'Invalid logo'));
+    return;
+  }
+
   const id = generateId();
   db.prepare(`
     INSERT INTO categories (id, name, type, icon, sort_order, logo_path, budget)
@@ -67,6 +74,13 @@ router.put('/:id', (req, res) => {
   }
 
   const { name, icon, sort_order, logo_path, budget } = req.body;
+
+  // Validate logo size & format
+  const logoValidation = validateLogoSizeAndFormat(logo_path);
+  if (!logoValidation.isValid) {
+    res.status(400).json(errorResponse(logoValidation.error || 'Invalid logo'));
+    return;
+  }
 
   db.prepare(`
     UPDATE categories 

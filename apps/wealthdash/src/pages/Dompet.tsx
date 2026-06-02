@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApi, formatRp } from '../hooks/useApi';
+import { useApi, formatRp, formatRpShort } from '../hooks/useApi';
 import { walletsApi, analyticsApi } from '../services/api';
 import type { Wallet } from '../types';
 import WalletCard from '../components/WalletCard';
@@ -171,7 +171,7 @@ const Dompet = ({ onSelectWallet }: DompetProps) => {
               icon={wallet.icon}
               name={wallet.name}
               typeBadge={badgeLabelMap[wallet.cluster] || wallet.cluster}
-              amount={formatRp(wallet.balance)}
+              amount={formatRpShort(wallet.balance)}
               iconBgClass={iconBgMap[wallet.cluster] || 'bg-surface-container'}
               iconTextClass={iconTextMap[wallet.cluster] || 'text-on-surface-variant'}
               badgeBgClass={badgeBgMap[wallet.cluster] || 'bg-surface-variant'}

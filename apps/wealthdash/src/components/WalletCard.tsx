@@ -16,34 +16,45 @@ const WalletCard = ({ icon, name, typeBadge, amount, iconBgClass, iconTextClass,
   return (
     <div 
       onClick={onClick}
-      className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-[0px_4px_12px_rgba(15,23,42,0.05)] transition-shadow group flex flex-col justify-between aspect-square ${onClick ? 'cursor-pointer hover:border-outline' : ''}`}
+      className={`bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 hover:shadow-[0px_8px_24px_rgba(15,23,42,0.06)] hover:border-outline transition-all duration-300 group flex items-center gap-4 relative w-full h-[100px] ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex justify-between items-start">
+      {/* Absolute positioned edit button on hover */}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit?.(e);
+        }}
+        className="absolute top-3 right-3 text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-surface-container-lowest border border-outline-variant p-1 rounded shadow-sm z-10 flex items-center justify-center"
+      >
+        <span className="material-symbols-outlined text-[16px]">edit</span>
+      </button>
+
+      {/* Left Area: Unified Logo + Badge Column (Vertically & Horizontally Centered) */}
+      <div className="flex flex-col items-center gap-1.5 shrink-0 h-full justify-between">
+        {/* Logo Container (Square 1:1, Rounded corners, elegant focus size) */}
         {logoUrl ? (
-          <div className="w-12 h-12 rounded-xl border border-outline-variant/30 overflow-hidden bg-white shadow-sm flex items-center justify-center p-1 shrink-0">
-            <img src={logoUrl} alt={name} className="w-full h-full object-contain" />
+          <div className="w-12 h-12 rounded-xl border border-outline-variant/30 overflow-hidden bg-white shadow-sm flex items-center justify-center p-1.5 shrink-0 transition-transform duration-300 group-hover:scale-105">
+            <img src={logoUrl} alt={name} className="w-full h-full object-contain rounded-md" />
           </div>
         ) : (
-          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${iconBgClass} ${iconTextClass} shrink-0`}>
-            <span className="material-symbols-outlined">{icon}</span>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${iconBgClass} ${iconTextClass}`}>
+            <span className="material-symbols-outlined text-[24px]">{icon}</span>
           </div>
         )}
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit?.(e);
-          }}
-          className="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-lowest border border-outline-variant p-1.5 rounded-lg shadow-sm"
-        >
-          <span className="material-symbols-outlined text-[18px]">edit</span>
-        </button>
+
+        {/* Badge (Small, readable, perfectly aligned & centered under the logo without truncation) */}
+        <span className={`${badgeBgClass} ${badgeTextClass} font-label-caps text-[8px] px-1.5 py-0.5 rounded text-center shrink-0 whitespace-nowrap`}>
+          {typeBadge}
+        </span>
       </div>
-      <div>
-        <div className="flex flex-col items-start gap-1 mb-2">
-          <span className={`${badgeBgClass} ${badgeTextClass} font-label-caps text-[10px] px-2 py-0.5 rounded-md`}>{typeBadge}</span>
-          <h4 className="font-body-md text-body-md font-semibold text-on-surface">{name}</h4>
-        </div>
-        <p className="font-data-md text-data-md text-on-surface text-left mt-2 font-bold">{amount}</p>
+
+      {/* Right Area: Name and Balance Column (Hierarchically Balanced) */}
+      <div className="flex flex-col justify-center items-start min-w-0 flex-1 h-full py-0.5">
+        {/* Wallet Name (Identitas Utama - Hierarchy 1) */}
+        <h4 className="font-body-md text-[15px] font-bold text-on-surface truncate w-full leading-tight">{name}</h4>
+        
+        {/* Balance Amount (Informasi Terpenting Kedua - Hierarchy 2) */}
+        <p className="font-data-sm text-data-sm text-on-surface-variant text-left font-semibold whitespace-nowrap mt-1 leading-none">{amount}</p>
       </div>
     </div>
   );

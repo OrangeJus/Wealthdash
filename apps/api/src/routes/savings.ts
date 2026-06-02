@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse, safeInt, currentPeriod } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, safeInt, currentPeriod, recalculateWalletBalance } from '../utils/helpers.js';
 
 const router = Router();
 
@@ -8,33 +8,6 @@ const router = Router();
 // Auto-migrate: add transaction_id column to savings_deposits
 // ──────────────────────────────────────────
 try { db.prepare(`ALTER TABLE savings_deposits ADD COLUMN transaction_id TEXT`).run(); } catch (_) {}
-
-// ──────────────────────────────────────────
-// Helper: recalculate wallet balance (same logic as transactions.ts)
-// ──────────────────────────────────────────
-function recalculateWalletBalance(walletId: string): void {
-  const incomeSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'income'`
-  ).get(walletId) as { total: number };
-
-  const expenseSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'expense'`
-  ).get(walletId) as { total: number };
-
-  const transferOutSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE wallet_id = ? AND type = 'transfer'`
-  ).get(walletId) as { total: number };
-
-  const transferInSum = db.prepare(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE to_wallet_id = ? AND type = 'transfer'`
-  ).get(walletId) as { total: number };
-
-  const newBalance = incomeSum.total - expenseSum.total - transferOutSum.total + transferInSum.total;
-
-  db.prepare(`
-    UPDATE wallets SET balance = ?, updated_at = datetime('now', 'localtime') WHERE id = ?
-  `).run(newBalance, walletId);
-}
 
 // ──────────────────────────────────────────
 // Helper: find the savings wallet (cluster = 'savings')

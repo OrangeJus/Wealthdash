@@ -37,6 +37,39 @@ describe('Wallets API', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
+
+    it('menerima logo dengan ukuran <= 5 MB dan format valid', async () => {
+      const smallBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const res = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'GoPay Valid Logo', cluster: 'liquid', logo_path: smallBase64 });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.logo_path).toBe(smallBase64);
+    });
+
+    it('menolak logo dengan ukuran > 5 MB', async () => {
+      const largeBase64 = 'data:image/png;base64,' + 'A'.repeat(7 * 1024 * 1024);
+      const res = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'GoPay Large Logo', cluster: 'liquid', logo_path: largeBase64 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Ukuran file melebihi batas maksimum 5 MB.');
+    });
+
+    it('menolak logo dengan format tidak valid', async () => {
+      const invalidFormatBase64 = 'data:application/pdf;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const res = await request(app)
+        .post('/api/wallets')
+        .send({ name: 'GoPay Invalid Format', cluster: 'liquid', logo_path: invalidFormatBase64 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Format gambar tidak didukung. Gunakan PNG, JPG, JPEG, atau SVG.');
+    });
   });
 
   describe('GET /api/wallets', () => {

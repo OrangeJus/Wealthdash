@@ -42,9 +42,9 @@ function App() {
         
         {activeTab === 'Dashboard' && <Dashboard key={`d-${refreshTrigger}`} onOpenTransaction={() => handleOpenTransaction()} onViewAllTransactions={() => setActiveTab('Transaksi')} />}
         {activeTab === 'Analitik' && <Analytics key={`a-${refreshTrigger}`} />}
-        {activeTab === 'Investasi' && <Investasi />}
+        {activeTab === 'Investasi' && <Investasi key={`inv-${refreshTrigger}`} />}
         {activeTab === 'Anggaran' && <Anggaran key={`ag-${refreshTrigger}`} onOpenTransaction={() => handleOpenTransaction()} />}
-        {activeTab === 'Tabungan' && <Tabungan />}
+        {activeTab === 'Tabungan' && <Tabungan key={`tab-${refreshTrigger}`} />}
         {activeTab === 'Transaksi' && <Transaksi refreshTrigger={refreshTrigger} onOpenTransaction={() => handleOpenTransaction()} onEditTransaction={handleOpenTransaction} onViewCategories={() => setActiveTab('Kategori')} />}
         {activeTab === 'Kategori' && <Kategori onBack={() => setActiveTab('Transaksi')} />}
         {activeTab === 'Dompet' && <Dompet key={`dm-${refreshTrigger}`} onSelectWallet={handleSelectWallet} />}

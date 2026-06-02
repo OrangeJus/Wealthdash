@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS stock_holdings (
     code            TEXT NOT NULL,  -- BBCA, BBRI, etc.
     name            TEXT NOT NULL,
     buy_price       INTEGER NOT NULL,  -- harga per lembar saat beli
-    lots            INTEGER NOT NULL CHECK (lots > 0),
+    lots            INTEGER NOT NULL CHECK (lots >= 0),
     current_price   INTEGER NOT NULL,
     bought_at       TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );

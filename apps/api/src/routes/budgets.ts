@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/connection.js';
-import { generateId, successResponse, errorResponse, currentPeriod } from '../utils/helpers.js';
+import { generateId, successResponse, errorResponse, currentPeriod, recalculateWalletBalance } from '../utils/helpers.js';
 
 const router = Router();
 
@@ -154,35 +154,39 @@ router.patch('/:id/toggle', (req, res) => {
         if (cat) categoryId = cat.id;
       }
 
-      // Create the transaction
-      db.prepare(`
-        INSERT INTO transactions (id, date, type, amount, category_id, wallet_id, note)
-        VALUES (?, ?, 'expense', ?, ?, ?, ?)
-      `).run(txId, today, existing.estimate, categoryId, wallet.id, note);
+      const toggleOn = db.transaction(() => {
+        // Create the transaction
+        db.prepare(`
+          INSERT INTO transactions (id, date, type, amount, category_id, wallet_id, note)
+          VALUES (?, ?, 'expense', ?, ?, ?, ?)
+        `).run(txId, today, existing.estimate, categoryId, wallet.id, note);
 
-      // Deduct from wallet balance
-      db.prepare(`UPDATE wallets SET balance = balance - ?, updated_at = datetime('now','localtime') WHERE id = ?`)
-        .run(existing.estimate, wallet.id);
+        // Recalculate wallet balance (recalculates from all transactions)
+        recalculateWalletBalance(wallet.id);
 
-      // Link the transaction to the budget
-      db.prepare('UPDATE budgets SET is_done = 1, linked_transaction_id = ? WHERE id = ?').run(txId, req.params.id);
+        // Link the transaction to the budget
+        db.prepare('UPDATE budgets SET is_done = 1, linked_transaction_id = ? WHERE id = ?').run(txId, req.params.id);
+      });
+      toggleOn();
     } else {
       // No wallet available — just mark as done without transaction
       db.prepare('UPDATE budgets SET is_done = 1 WHERE id = ?').run(req.params.id);
     }
   } else {
     // Marking as NOT DONE → delete the linked transaction
-    if (existing.linked_transaction_id) {
-      const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(existing.linked_transaction_id) as any;
-      if (tx) {
-        // Refund the wallet balance
-        db.prepare(`UPDATE wallets SET balance = balance + ?, updated_at = datetime('now','localtime') WHERE id = ?`)
-          .run(tx.amount, tx.wallet_id);
-        // Delete the transaction
-        db.prepare('DELETE FROM transactions WHERE id = ?').run(existing.linked_transaction_id);
+    const toggleOff = db.transaction(() => {
+      if (existing.linked_transaction_id) {
+        const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(existing.linked_transaction_id) as any;
+        if (tx) {
+          // Delete the transaction
+          db.prepare('DELETE FROM transactions WHERE id = ?').run(existing.linked_transaction_id);
+          // Recalculate wallet balance
+          recalculateWalletBalance(tx.wallet_id);
+        }
       }
-    }
-    db.prepare('UPDATE budgets SET is_done = 0, linked_transaction_id = NULL WHERE id = ?').run(req.params.id);
+      db.prepare('UPDATE budgets SET is_done = 0, linked_transaction_id = NULL WHERE id = ?').run(req.params.id);
+    });
+    toggleOff();
   }
 
   const updated = db.prepare('SELECT * FROM budgets WHERE id = ?').get(req.params.id);
@@ -197,17 +201,19 @@ router.delete('/:id', (req, res) => {
     return;
   }
 
-  // If there's a linked transaction, delete it and refund
-  if (existing.linked_transaction_id) {
-    const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(existing.linked_transaction_id) as any;
-    if (tx) {
-      db.prepare(`UPDATE wallets SET balance = balance + ?, updated_at = datetime('now','localtime') WHERE id = ?`)
-        .run(tx.amount, tx.wallet_id);
-      db.prepare('DELETE FROM transactions WHERE id = ?').run(existing.linked_transaction_id);
+  const deleteBudgetTx = db.transaction(() => {
+    // If there's a linked transaction, delete it and refund
+    if (existing.linked_transaction_id) {
+      const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(existing.linked_transaction_id) as any;
+      if (tx) {
+        db.prepare('DELETE FROM transactions WHERE id = ?').run(existing.linked_transaction_id);
+        recalculateWalletBalance(tx.wallet_id);
+      }
     }
-  }
-
-  db.prepare('DELETE FROM budgets WHERE id = ?').run(req.params.id);
+    db.prepare('DELETE FROM budgets WHERE id = ?').run(req.params.id);
+  });
+  
+  deleteBudgetTx();
   res.json(successResponse(null, 'Budget item deleted'));
 });
 

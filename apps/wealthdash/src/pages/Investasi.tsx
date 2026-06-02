@@ -18,7 +18,7 @@ const Investasi = () => {
 
   const { data: holdingsData, refetch: refetchHoldings } = useApi(() => investmentsApi.holdings(), []);
   const { data: rdnData, refetch: refetchRdn } = useApi(() => investmentsApi.rdnBalance(), []);
-  const { data: walletsData } = useApi(() => walletsApi.list(), []);
+  const { data: walletsData, refetch: refetchWallets } = useApi(() => walletsApi.list(), []);
 
   const handleOpenSell = (stockData: any) => {
     setSellStockData(stockData);
@@ -70,6 +70,7 @@ const Investasi = () => {
       }
       setIsRdnModalOpen(false);
       refetchRdn();
+      refetchWallets();
     } catch (err: any) {
       alert(err.message);
     }
