@@ -2,7 +2,7 @@ import { useApi, formatRp } from '../hooks/useApi';
 import { analyticsApi } from '../services/api';
 
 const IncomeExpenseChart = () => {
-  const { data: cashflow } = useApi(() => analyticsApi.cashflow(6), []);
+  const { data: cashflow } = useApi(() => analyticsApi.cashflow(undefined, 6), []);
 
   const formatMonth = (period: string) => {
     const [, m] = period.split('-');
