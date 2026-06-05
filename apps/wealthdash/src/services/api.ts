@@ -110,7 +110,10 @@ export const analyticsApi = {
     const qs = filters ? '?' + new URLSearchParams(cleanFilters as any) : '';
     return request<OverviewData>(`/analytics/overview${qs}`);
   },
-  cashflow: (months = 6) => request<CashflowPoint[]>(`/analytics/cashflow?months=${months}`),
+  cashflow: (range?: string, months = 6) => {
+    const qs = range ? `?range=${range}` : `?months=${months}`;
+    return request<CashflowPoint[]>(`/analytics/cashflow${qs}`);
+  },
   topExpenses: (filters?: Partial<TransactionFilters>) => {
     const cleanFilters = filters ? Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined)) : {};
     const qs = filters ? '?' + new URLSearchParams(cleanFilters as any) : '';

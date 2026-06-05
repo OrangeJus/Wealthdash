@@ -98,25 +98,79 @@ router.get('/overview', (req, res) => {
   }));
 });
 
-// GET /api/analytics/cashflow?months=6 — Monthly income vs expense
+// GET /api/analytics/cashflow — Monthly or daily income vs expense trend
 router.get('/cashflow', (req, res) => {
+  const range = req.query.range as string || 'last_6_months';
   const months = parseInt(req.query.months as string) || 6;
 
-  const data = db.prepare(`
-    WITH RECURSIVE month_series(period) AS (
-      SELECT strftime('%Y-%m', 'now', 'localtime')
-      UNION ALL
-      SELECT strftime('%Y-%m', period || '-01', '-1 month')
-      FROM month_series
-      WHERE period > strftime('%Y-%m', 'now', 'localtime', '-' || ? || ' months')
-    )
-    SELECT 
-      ms.period,
-      COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND date LIKE ms.period || '%'), 0) as income,
-      COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND date LIKE ms.period || '%'), 0) as expense
-    FROM month_series ms
-    ORDER BY ms.period ASC
-  `).all(months);
+  let data: any[];
+
+  if (range === 'this_week') {
+    data = db.prepare(`
+      WITH RECURSIVE days(date) AS (
+        SELECT strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0', '-6 days')
+        UNION ALL
+        SELECT date(date, '+1 day')
+        FROM days
+        WHERE date < strftime('%Y-%m-%d', 'now', 'localtime', 'weekday 0')
+      )
+      SELECT 
+        d.date as period,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND date = d.date), 0) as income,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND date = d.date), 0) as expense
+      FROM days d
+      ORDER BY d.date ASC
+    `).all();
+  } else if (range === 'this_month') {
+    data = db.prepare(`
+      WITH RECURSIVE days(date) AS (
+        SELECT strftime('%Y-%m-01', 'now', 'localtime')
+        UNION ALL
+        SELECT date(date, '+1 day')
+        FROM days
+        WHERE date < date('now', 'localtime', 'start of month', '+1 month', '-1 day')
+      )
+      SELECT 
+        d.date as period,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND date = d.date), 0) as income,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND date = d.date), 0) as expense
+      FROM days d
+      ORDER BY d.date ASC
+    `).all();
+  } else if (range === 'this_year') {
+    data = db.prepare(`
+      WITH RECURSIVE months(period) AS (
+        SELECT strftime('%Y-01', 'now', 'localtime')
+        UNION ALL
+        SELECT strftime('%Y-%m', period || '-01', '+1 month')
+        FROM months
+        WHERE period < strftime('%Y-12', 'now', 'localtime')
+      )
+      SELECT 
+        m.period,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND date LIKE m.period || '%'), 0) as income,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND date LIKE m.period || '%'), 0) as expense
+      FROM months m
+      ORDER BY m.period ASC
+    `).all();
+  } else {
+    // Default: last_6_months or custom months count
+    data = db.prepare(`
+      WITH RECURSIVE month_series(period) AS (
+        SELECT strftime('%Y-%m', 'now', 'localtime')
+        UNION ALL
+        SELECT strftime('%Y-%m', period || '-01', '-1 month')
+        FROM month_series
+        WHERE period > strftime('%Y-%m', 'now', 'localtime', '-' || ? || ' months')
+      )
+      SELECT 
+        ms.period,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'income' AND date LIKE ms.period || '%'), 0) as income,
+        COALESCE((SELECT SUM(amount) FROM transactions WHERE type = 'expense' AND date LIKE ms.period || '%'), 0) as expense
+      FROM month_series ms
+      ORDER BY ms.period ASC
+    `).all(months);
+  }
 
   res.json(successResponse(data));
 });
